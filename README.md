@@ -1,13 +1,23 @@
-rcomcat
-=======
-
-R library for searching the ANSS ComCat comprehensive earthquake catalog.
-
-searches Comcat for basic hypocentral data using the csv format
+Search the ANSS ComCat comprehensive earthquake catalog
+for basic hypocentral data using the csv format
 ( see https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php although that documentation is missing the type parameter at the end )
 
-usage:
+Usage:
 
+First install the package:
+From the command line:
+`R CMD INSTALL comcat`
+From within R, in this directory:
+```{r}
+install.packages('comcat')
+```
+or
+```{r}
+library(devtools)
+install_github('abarbour/rcomcat/comcat')
+```
+
+Then it can be used at will:
 ```{r}
 library(comcat)
 eqdata <- comcat_hypo() #  (this retrieves all earthquakes for the past 30 days into a data frame called comcatdata)
@@ -27,8 +37,8 @@ and one additional column, named `rtime`, which is the time converted to a
 
 to explore the output of the frame try commands such as:
 ```
-colnames(eqdata)  (will return the names of the columns)
-nrow(eqdata)   (will return the number of events found by the search)
+colnames(eqdata) # (will return the names of the columns)
+nrow(eqdata) #  (will return the number of events found by the search)
 ```
 
 This script lets you set many parameters but only uses the ones that are set to
