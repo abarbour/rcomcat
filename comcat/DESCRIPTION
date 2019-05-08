@@ -1,11 +1,16 @@
 Package: comcat
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Search the ANSS ComCat comprehensive earthquake catalog
 Version: 0.1.0
 Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: This software is in the public domain because it contains materials
+    that originally came from the United States Geological Survey, an
+    agency of the United States Department of Interior. For more
+    information, see the official USGS copyright policy at
+    https://www.usgs.gov/visual-id/credit_usgs.html#copyright
 Encoding: UTF-8
 LazyData: true
+RoxygenNote: 6.1.1

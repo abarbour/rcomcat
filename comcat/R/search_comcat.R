@@ -81,10 +81,10 @@
 #' @param minsig,maxsig min and max significance (I have no idea what significance refers to in Comcat)
 #' @param producttype limits to events with specific product types available such as "moment-tensor", "focal-mechanism", "shakemap", "losspager", "dyfi".
 #'
-#' @return
-#' @export
+#' @return data.frame
+#' @export comcat_hypo
 #'
-#' @examples
+# @examples
 comcat_hypo <- function(starttime = NA,
            endtime = NA,
            updatedafter = NA,
@@ -352,8 +352,8 @@ comcat_hypo <- function(starttime = NA,
 #' @param early datetime
 #' @param late datetime
 #'
-#' @return
-#' @export
+#' @return datetime
+#' @export midtime
 #'
 #' @examples
 #' midtime(Sys.time(), Sys.time()-100)
