@@ -20,7 +20,8 @@ install_github('abarbour/rcomcat/comcat')
 Then it can be used at will:
 ```{r}
 library(comcat)
-eqdata <- comcat_hypo() #  (this retrieves all earthquakes for the past 30 days into a data frame called comcatdata)
+# all earthquakes in the last 30 days:
+eqdata <- comcat_hypo() 
 ```
 
 To apply different search criteria see the parameters listed in the function
