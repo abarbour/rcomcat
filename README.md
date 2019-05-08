@@ -28,8 +28,8 @@ To apply different search criteria see the parameters listed in the function
 call below or at https://earthquakes.usgs.gov/fdsnws/event/1/, e.g.:
 
 ```{r}
-eqdata <- comcathypocsv(minmagnitude=5) #  (this will return only M>=5 earthquakes)
-eqdata <- comcathypocsv(alertlevel="red") # (this will return only earthquakes with a PAGER level of red)
+eqdata <- comcat_hypo(minmagnitude=5) #  (this will return only M>=5 earthquakes)
+eqdata <- comcat_hypo(alertlevel="red") # (this will return only earthquakes with a PAGER level of red)
 ```
 
 This function returns a dataframe (`eqdata` in the above examples) that has columns which are from the ComCat csv format
