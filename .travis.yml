@@ -16,7 +16,7 @@ jobs:
 
 r_packages:
  - httr
- = purrr
+ - purrr
  - readr
  - testthat
  - covr
