@@ -114,20 +114,6 @@ make_comcat_url <- function(starttime = NULL,
   minfelt <- as.numeric(minfelt)
   stopifnot((maxmmi > 0))
 
-  .to_posix <- function(x, verbose=FALSE){
-    fm <- "%Y-%m-%dT%H:%M:%S"
-    timezone <- "GMT"
-    if (verbose) message(x)
-    xpos <- if (is.character(x) | inherits(x,'POSIXt')){
-      x <- strftime(x, format=fm, usetz=FALSE, tz = timezone)
-      xp <- as.POSIXlt(x, format=fm, tz=timezone)
-      if (any(is.na(xp))) stop('could not coerce to POSIXlt')
-      xp
-    } else if (inherits(x,'Date')){
-      x
-    }
-    return(format(xpos, format=fm))
-  }
   if (!is.null(starttime)) starttime <- .to_posix(starttime)
   if (!is.null(endtime)) endtime <- .to_posix(endtime)
   if (!is.null(updatedafter)) updatedafter <- .to_posix(updatedafter)
@@ -261,250 +247,69 @@ comcat_query.default <- function(...){
   comcat_query(U)
 }
 
-# @rdname make_comcat_url
+#' @title adaptive_comcat_query
 # @return data.frame
-# @export
+#' @export
 #
 # @examples
-comcat_hypo <- function(...){
+# aq <- adaptive_comcat_query(endtime='2018-01-01', starttime='2016-01-01')
+adaptive_comcat_query <- function(...){
 
-    U <- make_comcat_url(...)
+  Today <- as.Date(Sys.time(), tz='UTC')
+  Last_month <- Today - 30
 
-    maxeventspersearch <- 20000 # the code also searches for this but I am leaving the default in case that fails
-    defaultduration <- 30
+  U <- make_comcat_url(...)
+  Att <- attributes(U)
 
-    # use orderby=time-asc
-    #<scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
-    basic <- "https://earthquake.usgs.gov/fdsnws/event/1/" # "http://comcat.cr.usgs.gov/fdsnws/event/1/"
-    # basic request for data, always order by time, and use csv format
-    basicdata <- paste(basic, "query?", "orderby=time-asc&format=csv", sep = "")
-    # basic request for count of data, always order by time
-    basiccount <- paste(basic, "count?", "orderby=time-asc", sep = "")
+  ul <- httr::parse_url(U)
+  Params <- ul[['query']]
+  param_names <- names(Params)
 
-    tfmt <- "%Y-%m-%dT%H:%M:%S"
-    fmtz <- "GMT"
-	.to_posix <- function(x, fm=tfmt, timezone=fmtz) as.POSIXlt(x, format=fm, tz=timezone)
+  # Make the counts version of this
+  count_method <- "count"
+  ul[['path']] <-  gsub("query", count_method, ul[['path']])
+  Att[['method']] <- count_method
+  UC <- httr::build_url(ul)
+  attributes(UC) <- Att
 
-    # get the maximum number of earthquakes allowed in a search by doing a event count on a small space-time window so it will be quick
-    # and using the gosjson format which returns this limit after the count
-    # note this search looks for M>=8 earthquakes in the last 10 minutes with hypocenters in a very small, rather inactive area
-    # thus it may fail if it ever returns an earthquake.
-    Now <- Sys.time()
-    Now_pos <- .to_posix(Now)
-    tenminutesago <- Now_pos - 10*60
-    tenminutesagostring <- strftime(tenminutesago, format = tfmt, tz = fmtz) # convert time to a strong for comcat
+  # Find out how many will be returned from the base query
+  Counts <- 251056 ## comcat_query(UC)
+  message(Counts, " earthquakes in this query\n(",U,")")
+  limit <- 20e3
+  if (Counts > limit){
+    # if there are too many, we adapt the search by time
+    n_segs <- 1 + (Counts - (Counts %% limit))/limit
+    message('re-formulating the search for ', n_segs, ' time windows')
+    has_start <- 'starttime' %in% param_names
+    has_end <- 'endtime' %in% param_names
+    starttime <- .to_posix(ifelse(has_start, Params[['starttime']], Today), to_char=FALSE)
+    endtime <- .to_posix(ifelse(has_end, Params[['endtime']], Last_month), to_char=FALSE)
 
-    if (FALSE){
-		getmaxcount <- paste(basiccount,
-			"&format=geojson&minlatitude=39.74881&maxlatitude=39.75012&minlongitude=-105.22078&maxlongitude=-105.21906&minmagnitude=8&starttime=",
-			tenminutesagostring,
-			sep = ""
-		)
-		#print(getmaxcount)
-		countstr <- readLines(getmaxcount, warn = FALSE)  # retrieve the count
-		# get rid of extraneous characters at the start of the line
-		countstr <- gsub("^.*wed.:", "", countstr)
-		countstr <- gsub("[,}]", "", countstr)
-		maxeventspersearch <- as.numeric(countstr)
-    }
-
-    # build the request string for limits other than start and end time
-    requestlimits <- ""
-    if (!is.na(updatedafter)) {
-      updatedafterstr <- strftime(updatedafter, format = tfmt)
-      requestlimits <- paste(requestlimits, "&updatedafter=", updatedafterstr, sep = "")
-    }
-    if (!is.na(minlatitude)) requestlimits <- paste(requestlimits, "&minlatitude=", minlatitude, sep = "")
-    if (!is.na(maxlatitude)) requestlimits <- paste(requestlimits, "&maxlatitude=", maxlatitude, sep = "")
-    if (!is.na(minlongitude)) requestlimits <- paste(requestlimits, "&minlongitude=", minlongitude, sep = "")
-    if (!is.na(maxlongitude)) requestlimits <- paste(requestlimits, "&maxlongitude=", maxlongitude, sep = "")
-    if (!is.na(latitude)) requestlimits <- paste(requestlimits, "&latitude=", latitude, sep = "")
-    if (!is.na(longitude)) requestlimits <- paste(requestlimits, "&longitude=", longitude, sep = "")
-    if (!is.na(minradiuskm)) requestlimits <- paste(requestlimits, "&minradiuskm=", minradiuskm, sep = "")
-    if ((!is.na(minradius)) & is.na(minradiuskm)) requestlimits <- paste(requestlimits, "&minradius=", minradius, sep = "")
-    if (!is.na(maxradiuskm)) requestlimits <- paste(requestlimits, "&maxradiuskm=", maxradiuskm, sep = "")
-    if ((!is.na(maxradius)) & is.na(maxradiuskm)) requestlimits <- paste(requestlimits, "&maxradius=", maxradius, sep = "")
-    if (!is.na(mindepth)) requestlimits <- paste(requestlimits, "&mindepth=", mindepth, sep = "")
-    if (!is.na(maxdepth)) requestlimits <- paste(requestlimits, "&maxdepth=", maxdepth, sep = "")
-    if (!is.na(minmagnitude)) requestlimits <- paste(requestlimits, "&minmagnitude=", minmagnitude, sep = "")
-    if (!is.na(maxmagnitude)) requestlimits <- paste(requestlimits, "&maxmagnitude=", maxmagnitude, sep = "")
-    if (!is.na(catalog)) requestlimits <- paste(requestlimits, "&catalog=", catalog, sep = "")
-    if (!is.na(contributor)) requestlimits <- paste(requestlimits, "&contributor=", contributor, sep = "")
-    if (!is.na(eventtype)) requestlimits <- paste(requestlimits, "&eventtype=", eventtype, sep = "")
-    if (!is.na(reviewstatus)) requestlimits <- paste(requestlimits, "&reviewstatus=", reviewstatus, sep = "")
-    if (!is.na(minmmi)) requestlimits <- paste(requestlimits, "&minmmi=", minmmi, sep = "")
-    if (!is.na(maxmmi)) requestlimits <- paste(requestlimits, "&maxmmi=", maxmmi, sep = "")
-    if (!is.na(mincdi)) requestlimits <- paste(requestlimits, "&mincdi=", mincdi, sep = "")
-    if (!is.na(maxcdi)) requestlimits <- paste(requestlimits, "&maxcdi=", maxcd, sep = "")
-    if (!is.na(minfelt)) requestlimits <- paste(requestlimits, "&minfelt=", minfelt, sep = "")
-    if (!is.na(alertlevel)) requestlimits <- paste(requestlimits, "&alertlevel=", alertlevel, sep = "")
-    if (!is.na(mingap)) requestlimits <- paste(requestlimits, "&mingap=", mingap, sep = "")
-    if (!is.na(maxgap)) requestlimits <- paste(requestlimits, "&maxgap=", maxgap, sep = "")
-    if (!is.na(minsig)) requestlimits <- paste(requestlimits, "&minsig=", minsig, sep = "")
-    if (!is.na(maxsig)) requestlimits <- paste(requestlimits, "&maxsig=", maxsig, sep = "")
-    if (!is.na(producttype)) requestlimits <- paste(requestlimits, "&producttype=", producttype, sep = "")
-
-
-    # make sure we have start and end times, if not get defaults
-    if (is.na(starttime)) starttime <- Now_pos  - (defaultduration * 24 * 3600) # default is defaultduration days in the past
-    if (is.na(endtime)) endtime <- Now_pos + (1 * 24 * 3600) # default is 1 day in the future
-
-    # put times into timepoints array that will get extended as needed to fit the maxeventspersearch limit
-    timepoints <- sort(c(starttime, endtime))
-
-    # now build the request strings to do counts for the timespoints and requestlimits and run them to get the counts
-    # also do a request that will get the maximum allowed count for a data request
-    timepointstrings <- strftime(timepoints, format = tfmt, tz = fmtz)
-    nwindows <- length(timepoints) - 1
-    countrequests <- rep("", nwindows)
-    counts <- rep(0, nwindows)
-    countrequests <- basiccount
-
-    if (nchar(requestlimits) > 0) countrequests <- paste0(countrequests, requestlimits)
-    countrequests <- paste0(countrequests, "&starttime=", timepointstrings[1])
-    countrequests <- paste0(countrequests, "&endtime=", timepointstrings[2])
-    # URL request
-    counts <- 29544 #scan(countrequests, quiet = TRUE)
-    totalevents <- counts
-
-    i <- 1
-
-    # now go into a loop where we split windows with counts > maxeventspersearch
-    #too_many <- max(counts) > maxeventspersearch
-    while (max(counts) > maxeventspersearch) {
-      for (i in 1:nwindows) {
-      	print(i)
-        if (!is.na(counts[i]))
-          if(counts[i] > maxeventspersearch) {
-            # split the window from i to i+1, don't do test if counts is NA
-
-            # timepoints gets a new value
-            newtimepoint <- midtime(timepoints[i], timepoints[i + 1])
-            timepoints <- append(timepoints, newtimepoint, i)
-            newtimepointstring <- strftime(newtimepoint, format = tfmt, tz = fmtz)
-            timepointstrings <- append(timepointstrings, newtimepointstring, i)
-
-            # counts[i] should now be NA and the one after it should be NA
-            counts[i] <- NA
-            counts <- append(counts, NA, i)
-
-            # similarly countrequests[i] and [i+1] should be NA
-            countrequests[i] <- NA
-            countrequests <- append(countrequests, NA, i)
-
-            # build the count requests and get the new counts
-            for (j in i:(i + 1)) {
-              countrequests[j] <- basiccount
-              if (nchar(requestlimits) > 0) countrequests[j] <- paste(countrequests[j], requestlimits, sep = "")
-              countrequests[j] <- paste(countrequests[j], "&starttime=", timepointstrings[j], sep = "")
-              countrequests[j] <- paste(countrequests[j], "&endtime=", timepointstrings[j + 1], sep = "")
-              print(countrequests[j])
-              counts[j] <- scan(countrequests[j], quiet = TRUE)
-            }
-
-            # and now there is one more window
-            nwindows <- nwindows + 1
-
-          } # end of the if loop if a window needs to be split
-      } # end of for loop over the number of windows
-    } # end of while loop to develop the time windows with less than maxeventspersearch events
-
-	stop()
-
-    # now get the data for each window
-
-    # first develop the requests for each window
-    datarequests <- rep("", nwindows)
-    for (i in 1:nwindows) {
-      datarequests[i] <- basicdata
-      if (nchar(requestlimits) > 0) datarequests[i] <- paste(datarequests[i], requestlimits, sep = "")
-      datarequests[i] <- paste(datarequests[i], "&starttime=", timepointstrings[i], sep = "")
-      datarequests[i] <- paste(datarequests[i], "&endtime=", timepointstrings[i + 1], sep = "")
-    }
-
-    # get the data for the first window
-    data <- scan(
-        datarequests[1],
-        list(
-          time = "",
-          latitude = 0,
-          longitude = 0,
-          depth = 0,
-          mag = 0,
-          magtype = "",
-          nst = 0,
-          gap = 0,
-          dmin = 0,
-          rms = 0,
-          net = "",
-          id = "",
-          updated = "",
-          place = "",
-          type = ""
-        ),
-        sep = ",",
-        quote = "\"",
-        skip = 1,
-        quiet = TRUE
-      )
-
-    # if there there are 2 or more windows, then get the data for later windows and append it
-    if (nwindows > 1)
-      for(i in 2:nwindows) {
-        data2 <- scan(
-            datarequests[i],
-            list(
-              time = "",
-              latitude = 0,
-              longitude = 0,
-              depth = 0,
-              mag = 0,
-              magtype = "",
-              nst = 0,
-              gap = 0,
-              dmin = 0,
-              rms = 0,
-              net = "",
-              id = "",
-              updated = "",
-              place = "",
-              type = ""
-            ),
-            sep = ",",
-            quote = "\"",
-            skip = 1,
-            quiet = TRUE
-          )
-        data <- mapply(c, data, data2, SIMPLIFY = FALSE) # mapply applies c (concatenate) to each item (years, mag, location...) in the lists  data and data2
-      }
-
-    # transform to a data frame
-    dataframe <- data.frame(sapply(data, c))
-
-    # remove non-unique events in case there are events on window boundaries
-    dataframe <- unique(dataframe)
-
-    # add POSIXlt format times to the data frame
-    rtime <- as.POSIXlt(strptime(dataframe$time, tfmt), tz = "UTC")
-    dataframe <- data.frame(dataframe, rtime = rtime)
-
-    # return the data
-    return(dataframe)
-
+    t_seq <- seq(starttime, endtime, length.out = n_segs)
+    Df <- data.frame(Start=t_seq[-n_segs], End=t_seq[-1])
+    print(Df)
+    Dat <- NA
+  } else {
+    Dat <- comcat_query(U)
+  }
+  return(Dat)
 }
 
-
-# Calculate the midpoint time between two times
-#
-# @param early datetime
-# @param late datetime
-#
-# @return datetime
-# @export midtime
-#
-# @examples
-# midtime(Sys.time(), Sys.time()-100)
-midtime <- function(early, late){
-  mid <- early + (difftime(late, early) / 2)
-  return(mid)
+.to_posix <- function(x, verbose=FALSE, to_char=TRUE){
+  fm <- "%Y-%m-%dT%H:%M:%S"
+  timezone <- "UTC"
+  if (verbose) message(x)
+  xpos <- if (is.character(x) | inherits(x,'POSIXt')){
+    x <- strftime(x, format=fm, usetz=FALSE, tz = timezone)
+    xp <- as.POSIXlt(x, format=fm, tz=timezone)
+    if (any(is.na(xp))) stop('could not coerce to POSIXlt')
+    xp
+  } else if (inherits(x,'Date')){
+    x
+  }
+  if (to_char){
+    format(xpos, format=fm)
+  } else {
+    xpos
+  }
 }

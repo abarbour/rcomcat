@@ -2,6 +2,7 @@
 
 S3method(comcat_query,comcat_url)
 S3method(comcat_query,default)
+export(adaptive_comcat_query)
 export(comcat_query)
 export(make_comcat_url)
 import(httr)
