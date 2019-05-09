@@ -2,7 +2,9 @@
 % Please edit documentation in R/search_comcat.R
 \name{make_comcat_url}
 \alias{make_comcat_url}
-\alias{comcat_hypo}
+\alias{comcat_query}
+\alias{comcat_query.comcat_url}
+\alias{comcat_query.default}
 \title{Search ComCat for basic earthquake data}
 \usage{
 make_comcat_url(starttime = NULL, endtime = NULL,
@@ -14,7 +16,11 @@ make_comcat_url(starttime = NULL, endtime = NULL,
   orderby = NULL, limit = NULL, eventtype = "earthquake", alertlevel,
   producttype)
 
-comcat_hypo(...)
+comcat_query(x, ...)
+
+\method{comcat_query}{comcat_url}(x, verbose = TRUE, ...)
+
+\method{comcat_query}{default}(...)
 }
 \arguments{
 \item{starttime, endtime, updatedafter}{time window parameters}
@@ -49,14 +55,16 @@ are removed from the search. \emph{Warning: there are numerous options (see
 
 \item{producttype}{limits to events with specific product types available; checking done if not \code{\link{missing}}}
 
+\item{x}{object}
+
 \item{...}{arguments passed to \code{\link{make_comcat_url}}}
+
+\item{verbose}{logical; should the query by shown?}
 }
 \value{
 A url with all non-NULL parameters that are specificied; this modifies
 the \link[httr]{url} object with an additional attribute for format, making it
 an object with \code{'comcat_url'} inheritance.
-
-data.frame
 }
 \description{
 Searches the ComCat database for basic hypocentral data for earthquakes
@@ -73,7 +81,13 @@ u <- make_comcat_url(search_circle = list(latitude=32,longitude=-120,maxradiuskm
 all.equal(u, httr::build_url(httr::parse_url(u)), check.attributes = FALSE)
 
 \dontrun{
-readr::read_csv(u)
+eqs_raw <- readr::read_csv(u)
+eqs <- comcat_query(u)
+all.equal(eqs, eqs_raw)
+
+# Plot the earthquakes on a map, scaling them by a proxy for seismic moment
+plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
+summary(eqs)
 }
 }
 \references{

@@ -1,4 +1,4 @@
-#' Search ComCat for basic earthquake data
+#' @title Search ComCat for basic earthquake data
 #'
 #' @description
 #'  Searches the ComCat database for basic hypocentral data for earthquakes
@@ -47,7 +47,13 @@
 # all.equal(httr::parse_url(u), attr(u,'ul'), check.attributes = FALSE)
 #'
 #' \dontrun{
-#' readr::read_csv(u)
+#' eqs_raw <- readr::read_csv(u)
+#' eqs <- comcat_query(u)
+#' all.equal(eqs, eqs_raw)
+#'
+#' # Plot the earthquakes on a map, scaling them by a proxy for seismic moment
+#' plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
+#' summary(eqs)
 #' }
 make_comcat_url <- function(starttime = NULL,
            endtime = NULL,
@@ -79,11 +85,7 @@ make_comcat_url <- function(starttime = NULL,
     stopifnot((limit > 0) & (limit <= 20e3))
   }
   orderby <- match.arg(orderby, c('time-asc','time','magnitude','magnitude-asc'))
-  #eventtype <- match.arg(eventtype, c("earthquake"))
   format <- match.arg(format, c("csv","geojson","quakeml","text","kml","kmlraw","xml","cap"))
-  # Path
-  method <- match.arg(method, c("query","count","version","contributors","catalogs","application.wadl","application.json"))
-  path <- paste0("fdsnws/event/1/", method)
 
   producttype <- if (!missing(producttype)){
     match.arg(producttype, c("moment-tensor", "focal-mechanism", "shakemap", "losspager", "dyfi"))
@@ -196,6 +198,10 @@ make_comcat_url <- function(starttime = NULL,
   # strips out non-NULL components, as build_url does
   query <- purrr::compact(query)
 
+  # Path
+  method <- match.arg(method, c("query","count","version","contributors","catalogs","application.wadl","application.json"))
+  path <- paste0("fdsnws/event/1/", method)
+
   # Url contents
   ul <- list(scheme="https",
              hostname="earthquake.usgs.gov",
@@ -217,9 +223,48 @@ make_comcat_url <- function(starttime = NULL,
 }
 
 #' @rdname make_comcat_url
-#' @return data.frame
+#' @param x object
+#' @param verbose logical; should the query by shown?
 #' @export
-#'
+comcat_query <- function(x, ...) UseMethod('comcat_query')
+
+#' @rdname make_comcat_url
+#' @method comcat_query comcat_url
+#' @export
+comcat_query.comcat_url <- function(x, verbose=TRUE, ...){
+
+  if (verbose){
+    message(x)
+  }
+
+  format <- attr(x, 'format')
+  method <- attr(x, 'method')
+
+  values <- if (method == 'count'){
+    scan(x)
+  } else if (method == 'query') {
+    if (format == 'csv'){
+      readr::read_csv(x)
+    }
+  } else {
+    .NotYetImplemented()
+  }
+
+  return(values)
+}
+
+#' @rdname make_comcat_url
+#' @method comcat_query default
+#' @export
+comcat_query.default <- function(...){
+  U <- make_comcat_url(...)
+  comcat_query(U)
+}
+
+# @rdname make_comcat_url
+# @return data.frame
+# @export
+#
 # @examples
 comcat_hypo <- function(...){
 
@@ -455,7 +500,7 @@ comcat_hypo <- function(...){
 #' @param late datetime
 #'
 #' @return datetime
-#' @export midtime
+# @export midtime
 #'
 #' @examples
 #' midtime(Sys.time(), Sys.time()-100)
