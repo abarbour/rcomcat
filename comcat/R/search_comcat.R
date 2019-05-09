@@ -494,16 +494,16 @@ comcat_hypo <- function(...){
 }
 
 
-#' Calculate the midpoint time between two times
-#'
-#' @param early datetime
-#' @param late datetime
-#'
-#' @return datetime
+# Calculate the midpoint time between two times
+#
+# @param early datetime
+# @param late datetime
+#
+# @return datetime
 # @export midtime
-#'
-#' @examples
-#' midtime(Sys.time(), Sys.time()-100)
+#
+# @examples
+# midtime(Sys.time(), Sys.time()-100)
 midtime <- function(early, late){
   mid <- early + (difftime(late, early) / 2)
   return(mid)
