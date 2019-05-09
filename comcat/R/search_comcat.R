@@ -117,6 +117,7 @@ comcat_hypo <- function(starttime = NA,
            minsig = NA,
            maxsig = NA,
            producttype = NA){
+    
     maxeventspersearch <- 20000 # the code also searches for this but I am leaving the default in case that fails
     defaultduration <- 30
 
@@ -128,22 +129,31 @@ comcat_hypo <- function(starttime = NA,
     basiccount <- paste(basic, "count?", "orderby=time-asc", sep = "")
 
     tfmt <- "%Y-%m-%dT%H:%M:%S"
+    fmtz <- "GMT"
+	.to_posix <- function(x, fm=tfmt, timezone=fmtz) as.POSIXlt(x, format=fm, tz=timezone)
 
     # get the maximum number of earthquakes allowed in a search by doing a event count on a small space-time window so it will be quick
     # and using the gosjson format which returns this limit after the count
     # note this search looks for M>=8 earthquakes in the last 10 minutes with hypocenters in a very small, rather inactive area
     # thus it may fail if it ever returns an earthquake.
-    tenminutesago <-  as.POSIXlt(Sys.time(), "GMT")  - (600) # this is 10 minutes in the past
-    tenminutesagostring <- strftime(tenminutesago, format = tfmt, tz = "GMT") # convert time to a strong for comcat
-    getmaxcount <- paste(basiccount,
-                         "&format=geojson&minlatitude=39.74881&maxlatitude=39.75012&minlongitude=-105.22078&maxlongitude=-105.21906&minmagnitude=8&starttime=",
-                         tenminutesagostring,
-                         sep = "")
-    countstr <- readLines(getmaxcount, warn = FALSE)  # retrieve the count
-    # get rid of extraneous characters at the start of the line
-    countstr <- gsub("^.*wed.:", "", countstr)
-    countstr <- gsub("[,}]", "", countstr)
-    maxeventspersearch <- as.numeric(countstr)
+    Now <- Sys.time()
+    Now_pos <- .to_posix(Now)
+    tenminutesago <- Now_pos - 10*60
+    tenminutesagostring <- strftime(tenminutesago, format = tfmt, tz = fmtz) # convert time to a strong for comcat
+    
+    if (FALSE){
+		getmaxcount <- paste(basiccount,
+			"&format=geojson&minlatitude=39.74881&maxlatitude=39.75012&minlongitude=-105.22078&maxlongitude=-105.21906&minmagnitude=8&starttime=",
+			tenminutesagostring,
+			sep = ""
+		)
+		#print(getmaxcount)
+		countstr <- readLines(getmaxcount, warn = FALSE)  # retrieve the count
+		# get rid of extraneous characters at the start of the line
+		countstr <- gsub("^.*wed.:", "", countstr)
+		countstr <- gsub("[,}]", "", countstr)
+		maxeventspersearch <- as.numeric(countstr)
+    }
 
     # build the request string for limits other than start and end time
     requestlimits <- ""
@@ -183,41 +193,34 @@ comcat_hypo <- function(starttime = NA,
 
 
     # make sure we have start and end times, if not get defaults
-    if (is.na(starttime)) starttime <- as.POSIXlt(Sys.time(), "GMT")  - (defaultduration * 24 * 3600) # default is defaultduration days in the past
-    if (is.na(endtime)) endtime <- as.POSIXlt(Sys.time(), "GMT") + (1 * 24 * 3600) # default is 1 day in the future
-
-    # make sure times are in order
-    if (endtime < starttime) {
-      junk <- endtime
-      endtime <- starttime
-      starttime <- endtime
-    }
+    if (is.na(starttime)) starttime <- Now_pos  - (defaultduration * 24 * 3600) # default is defaultduration days in the past
+    if (is.na(endtime)) endtime <- Now_pos + (1 * 24 * 3600) # default is 1 day in the future
 
     # put times into timepoints array that will get extended as needed to fit the maxeventspersearch limit
     timepoints <- sort(c(starttime, endtime))
 
     # now build the request strings to do counts for the timespoints and requestlimits and run them to get the counts
     # also do a request that will get the maximum allowed count for a data request
-    timepointstrings <- strftime(timepoints, format = tfmt, tz = "GMT")
+    timepointstrings <- strftime(timepoints, format = tfmt, tz = fmtz)
     nwindows <- length(timepoints) - 1
     countrequests <- rep("", nwindows)
     counts <- rep(0, nwindows)
+    countrequests <- basiccount
+
+    if (nchar(requestlimits) > 0) countrequests <- paste0(countrequests, requestlimits) 
+    countrequests <- paste0(countrequests, "&starttime=", timepointstrings[1])
+    countrequests <- paste0(countrequests, "&endtime=", timepointstrings[2])
+    # URL request
+    counts <- 29544 #scan(countrequests, quiet = TRUE)
+    totalevents <- counts
+    
     i <- 1
-    countrequests[i] <- basiccount
-
-    if (nchar(requestlimits) > 0)
-      countrequests[i] <- paste(countrequests[i], requestlimits, sep = "")
-    countrequests[i] <-
-      paste(countrequests[i], "&starttime=", timepointstrings[i], sep = "")
-    countrequests[i] <-
-      paste(countrequests[i], "&endtime=", timepointstrings[i + 1], sep = "")
-    counts[i] <- scan(countrequests[i], quiet = TRUE)
-
-    totalevents <- counts[i]
 
     # now go into a loop where we split windows with counts > maxeventspersearch
+    #too_many <- max(counts) > maxeventspersearch
     while (max(counts) > maxeventspersearch) {
       for (i in 1:nwindows) {
+      	print(i)
         if (!is.na(counts[i]))
           if(counts[i] > maxeventspersearch) {
             # split the window from i to i+1, don't do test if counts is NA
@@ -225,8 +228,7 @@ comcat_hypo <- function(starttime = NA,
             # timepoints gets a new value
             newtimepoint <- midtime(timepoints[i], timepoints[i + 1])
             timepoints <- append(timepoints, newtimepoint, i)
-            newtimepointstring <-
-              strftime(newtimepoint, format = "%Y-%m-%dT%H:%M:%S", tz = "GMT")
+            newtimepointstring <- strftime(newtimepoint, format = tfmt, tz = fmtz)
             timepointstrings <- append(timepointstrings, newtimepointstring, i)
 
             # counts[i] should now be NA and the one after it should be NA
@@ -240,19 +242,10 @@ comcat_hypo <- function(starttime = NA,
             # build the count requests and get the new counts
             for (j in i:(i + 1)) {
               countrequests[j] <- basiccount
-
-              if (nchar(requestlimits) > 0)
-                countrequests[j] <- paste(countrequests[j], requestlimits, sep = "")
-              countrequests[j] <-
-                paste(countrequests[j],
-                      "&starttime=",
-                      timepointstrings[j],
-                      sep = "")
-              countrequests[j] <-
-                paste(countrequests[j],
-                      "&endtime=",
-                      timepointstrings[j + 1],
-                      sep = "")
+              if (nchar(requestlimits) > 0) countrequests[j] <- paste(countrequests[j], requestlimits, sep = "")
+              countrequests[j] <- paste(countrequests[j], "&starttime=", timepointstrings[j], sep = "")
+              countrequests[j] <- paste(countrequests[j], "&endtime=", timepointstrings[j + 1], sep = "")
+              print(countrequests[j])
               counts[j] <- scan(countrequests[j], quiet = TRUE)
             }
 
@@ -263,6 +256,7 @@ comcat_hypo <- function(starttime = NA,
       } # end of for loop over the number of windows
     } # end of while loop to develop the time windows with less than maxeventspersearch events
 
+	stop()
 
     # now get the data for each window
 
