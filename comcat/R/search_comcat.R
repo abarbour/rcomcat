@@ -1,136 +1,228 @@
-
-
-#' Search ComCat for basic earthquak data
+#' Search ComCat for basic earthquake data
 #'
 #' @description
-#'  searches Comcat for basic hypocentral data using the csv format ( see
-#'  http://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php although that
-#'  documentation is missing the type parameter at the end )
-#'
-#'  usage: save this file in searchcomcat.R (the name does not actually
-#'  matter) these functions only use the basic level R installation and so
-#'  no other packages need to be installed or loaded. in your R script or
-#'  session do the following: source("searchcomcat.R")  (use the full path
-#'  name if it is in another directory) comcatdata <- comcathypocsv()
-#'  (this retrieves all earthquakes for the past 30 days into a data frame
-#'  called comcatdata) to apply different search criteria see the parameters
-#'  listed in the function call below or at
-#'  http://comcat.cr.usgs.gov/fdsnws/event/1/, e.g. comcatdata <-
-#'  comcathypocsv(minmagnitude=5)   (this will return only M>=5 earthquakes)
-#'  comcatdata <- comcathypocsv(alertlevel="red") (this will return only
-#'  earthquakes with a PAGER level of red)
-#'
-#'  this function returns a dataframe (comcatdata in the above examples)
-#'  that has columns which are from the ComCat csv format and one additional
-#'  column, named rtime, which is the time converted to a POSIXlt format
-#'  which can be used for computations in R to explore the output of the
-#'  frame try commands such as: colnames(comcatdata)  (will return the names
-#'  of the columns) nrow(comcatdata)   (will return the number of events
-#'  found by the search)
-#'
-#'  this script lets you set many parameters but only uses the ones that are
-#'  set to something other than NA it has few defaults beyond the ones
-#'  applied by Comcat and it does very little parameter checking
-#'
-#'  ordering is always done by ascending time to make it easier to deal with
-#'  the need to search by multiple windows
-#'
-#'  start, end, and updatedafter times should be given as R internal POSIXlt
-#'  classes so that the script can work with them.  See the R function
-#'  Sys.time in the base class numeric parameters (e.g. minmagnitude) should
-#'  be given as numbers character string parameters (e.g. eventtype or
-#'  alertlevel) should be given as strings
-#'
-#'  time is assumed to be in UTC, the function does not check the time zone
-#'  for the times that are given
-#'
-#'  the defaults it has are: 1: endtime defaults to 1 day in the future from
-#'  system time.  This lets you search without worrying that time is passing
-#'  as the program does things 2: starttime defaults to defaultduration days
-#'  in the past from system time, set below 3: I put in the default
-#'  eventtype=earthquake so that it does not return blasts unless you want
-#'  them, set to NA if you don't want this applied
-#'
-#'  parameter checking is limited to: if min or max radius is set in both km
-#'  or degrees then the km version takes precedence it makes sure that
-#'  starttime is before endtime
-#'
-#'  if a parameter is not set in the call to the function then it is not
-#'  used in the search and Comcat defaults are used see
-#'  http://comcat.cr.usgs.gov/fdsnws/event/1/ for more info on parameters
-#'  and their defaults
-#'
-#'  FUNCTION STARTS HERE.  PARAMETERS ARE SHOWN WITH THEIR DEFAULTS AND DO
-#'  NOT NEED TO BE GIVEN UNLESS YOU WANT TO CHANGE THEM. NA means Not
-#'  Available and the parameter will not be used (except for the defaults on
-#'  start and end times)
+#'  Searches the ComCat database for basic hypocentral data for earthquakes
+#'  including origin time, location, magnitude, etc.
 #'
 #' @param starttime,endtime,updatedafter time window parameters
-#' @param minlatitude,maxlatitude,minlongitude,maxlongitude lat-lon box parameters
-#' @param latitude,longitude,minradius,minradiuskm,maxradius,maxradiuskm circle search parameters
+#' @param search_box list containing \code{minlatitude,maxlatitude,minlongitude,maxlongitude} for lat-lon box parameters;
+#' note that if this and \code{search_circle} are specificied, the code will throw and error.
+#' @param search_circle list containing \code{latitude,longitude,maxradius,maxradiuskm} for circle search parameters;
+#' note that if this and \code{search_box} are specificied, the code will throw and error.
 #' @param mindepth,maxdepth depth search parameters
 #' @param minmagnitude,maxmagnitude magnitude search parameters
 #' @param catalog,contributor catalog and contributor specifications; omitting them gets the "preferred" solution
-#' @param eventtype the type of event; if \code{eventtype='earthquake'} non-earthquakes are removed from the search
 #' @param reviewstatus review status defaults to all or can be automatic or reviewed only
 #' @param minmmi,maxmmi Minimum and Maximum values for Maximum Modified Mercalli Intensity reported by ShakeMap.
-#' @param mincdi,maxcdi Minimum and Maximum values for Maximum Community Determined Intensity reported by DYFI.
+#' @param mincdi,maxcdi Minimum and Maximum values for Maximum Community Determined Intensity reported by Did You Feel It? forms (DYFI).
 #' @param minfelt limit to events with this many DYFI responses
-#' @param alertlevel limit to events with a specific pager alert which can be "green", "yellow", "orange", or "red"
-#' @param mingap,maxgap min and max azimuthal gaps
-#' @param minsig,maxsig min and max significance (I have no idea what significance refers to in Comcat)
-#' @param producttype limits to events with specific product types available such as "moment-tensor", "focal-mechanism", "shakemap", "losspager", "dyfi".
+#' @param limit integer; the maximum number of events to return -- presently it cannot exceed 20k
+#' @param eventtype the type of event; if \code{eventtype='earthquake'} non-earthquakes
+#' are removed from the search. \emph{Warning: there are numerous options (see
+#' \url{https://earthquake.usgs.gov/fdsnws/event/1/application.json}, and no arg-checking is done here.}
+#' @param alertlevel limit to events with a specific pager alert; checking done if not \code{\link{missing}}
+#' @param producttype limits to events with specific product types available; checking done if not \code{\link{missing}}
+#' @param ... arguments passed to \code{\link{make_comcat_url}}
 #'
+#' @return A url with all non-NULL parameters that are specificied; this modifies
+#' the \link[httr]{url} object with an additional attribute for format, making it
+#' an object with \code{'comcat_url'} inheritance.
+#'
+#' @export
+#'
+#' @seealso \link[httr]{build_url} and \link{comcat_hypo}
+#'
+#' @references \url{https://earthquake.usgs.gov/fdsnws/event/1/},
+#'  \url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}
+#'
+#' @examples
+#' make_comcat_url()
+#' make_comcat_url(method='count')
+#' make_comcat_url(method='count', starttime='2011-03-09', endtime='2011-03-11') # prior to Tohoku M9
+#' make_comcat_url(method='count', starttime='2011-03-11', endtime='2011-03-13') # including Tohoku M9
+#' make_comcat_url(method='count', starttime=Sys.time()-30*60)
+#' u <- make_comcat_url(search_circle = list(latitude=32,longitude=-120,maxradiuskm=400))
+#'
+#' all.equal(u, httr::build_url(httr::parse_url(u)), check.attributes = FALSE)
+# all.equal(httr::parse_url(u), attr(u,'ul'), check.attributes = FALSE)
+#'
+#' \dontrun{
+#' readr::read_csv(u)
+#' }
+make_comcat_url <- function(starttime = NULL,
+           endtime = NULL,
+           updatedafter = NULL,
+           search_box = NULL,
+           search_circle = NULL,
+           mindepth = NULL,
+           maxdepth = NULL,
+           minmagnitude = NULL,
+           maxmagnitude = NULL,
+           catalog = NULL,
+           contributor = NULL,
+           reviewstatus = NULL,
+           minmmi = NULL,
+           maxmmi = NULL,
+           mincdi = NULL,
+           maxcdi = NULL,
+           minfelt = NULL,
+           method = NULL,
+           format = NULL,
+           orderby = NULL,
+           limit = NULL,
+           eventtype = 'earthquake',
+           alertlevel,
+           producttype){
+
+  if (!is.null(limit)){
+    limit <- as.integer(limit)
+    stopifnot((limit > 0) & (limit <= 20e3))
+  }
+  orderby <- match.arg(orderby, c('time-asc','time','magnitude','magnitude-asc'))
+  #eventtype <- match.arg(eventtype, c("earthquake"))
+  format <- match.arg(format, c("csv","geojson","quakeml","text","kml","kmlraw","xml","cap"))
+  # Path
+  method <- match.arg(method, c("query","count","version","contributors","catalogs","application.wadl","application.json"))
+  path <- paste0("fdsnws/event/1/", method)
+
+  producttype <- if (!missing(producttype)){
+    match.arg(producttype, c("moment-tensor", "focal-mechanism", "shakemap", "losspager", "dyfi"))
+  } else {
+    NULL
+  }
+
+  alertlevel <- if (!missing(alertlevel)){
+    match.arg(alertlevel, c('green','yellow','orange','red'))
+  } else {
+    NULL
+  }
+
+  maxcdi <- as.numeric(maxcdi)
+  stopifnot((maxcdi >= 0) & (maxcdi <= 12))
+
+  mincdi <- as.numeric(mincdi)
+  stopifnot((mincdi >= 0) & (mincdi <= 12))
+
+  maxmmi <- as.numeric(maxmmi)
+  stopifnot((maxmmi >= 0) & (maxmmi <= 12))
+
+  minmmi <- as.numeric(minmmi)
+  stopifnot((minmmi >= 0) & (minmmi <= 12))
+
+  minfelt <- as.numeric(minfelt)
+  stopifnot((maxmmi > 0))
+
+  .to_posix <- function(x, verbose=FALSE){
+    fm <- "%Y-%m-%dT%H:%M:%S"
+    timezone <- "GMT"
+    if (verbose) message(x)
+    xpos <- if (is.character(x) | inherits(x,'POSIXt')){
+      x <- strftime(x, format=fm, usetz=FALSE, tz = timezone)
+      xp <- as.POSIXlt(x, format=fm, tz=timezone)
+      if (any(is.na(xp))) stop('could not coerce to POSIXlt')
+      xp
+    } else if (inherits(x,'Date')){
+      x
+    }
+    return(format(xpos, format=fm))
+  }
+  if (!is.null(starttime)) starttime <- .to_posix(starttime)
+  if (!is.null(endtime)) endtime <- .to_posix(endtime)
+  if (!is.null(updatedafter)) updatedafter <- .to_posix(updatedafter)
+
+  search_in_box <- !is.null(search_box)
+  #list(minlatitude = NULL, maxlatitude = NULL, minlongitude = NULL, maxlongitude = NULL)
+  search_in_circle <- !is.null(search_circle)
+  #list(latitude = NULL, longitude = NULL, maxradius = NULL, maxradiuskm = NULL)
+  if (search_in_box & search_in_circle) stop('cannot search for events in both a box and a circle')
+
+  # Query method Parameters:
+  # by default, build_url compacts the list (strips out NULL) with
+  # purrr::compact, and we do the same thing in the following below,
+  # so put everything in a single list
+  #
+  # Note that here NULL means unsupported in this script, which could
+  # change in the future
+  #
+  query <- list(# Formats
+                format=format,
+                # Time
+                endtime=endtime,
+                starttime=starttime,
+                updatedafter=updatedafter,
+                # Other
+                catalog = catalog,
+                contributor = contributor,
+                eventid = NULL,
+                includeallmagnitudes = NULL,
+                includeallorigins = NULL,
+                includearrivals = NULL,
+                includedeleted = NULL,
+                includesuperseded = NULL,
+                limit = limit,
+                maxdepth = maxdepth,
+                maxmagnitude = maxmagnitude,
+                mindepth = mindepth,
+                minmagnitude = minmagnitude,
+                offset = NULL,
+                orderby = orderby,
+                # Extensions
+                alertlevel = alertlevel,
+                callback = NULL,
+                eventtype=eventtype,
+                jsonerror=NULL,
+                kmlanimated=NULL,
+                kmlcolorby=NULL,
+                maxcdi = maxcdi,
+                maxgap = NULL,
+                maxmmi = maxmmi,
+                maxsig = NULL,
+                mincdi = mincdi,
+                minfelt = minfelt,
+                mingap = NULL,
+                minsig = NULL,
+                nodata = NULL, #default 204
+                producttype = producttype,
+                productcode = NULL,
+                reviewstatus = reviewstatus
+                )
+  # Tack on Location options
+  if (search_in_circle){
+    query <- c(query, search_circle)
+  } else if (search_in_box) {
+    query <- c(query, search_box)
+  }
+
+  # strips out non-NULL components, as build_url does
+  query <- purrr::compact(query)
+
+  # Url contents
+  ul <- list(scheme="https",
+             hostname="earthquake.usgs.gov",
+             port=NULL,
+             path=path,
+             query=query,
+             params=NULL,
+             fragment=NULL,
+             username=NULL,
+             password=NULL)
+  class(ul) <- c('url','list')
+
+  #<scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
+  comrl <- httr::build_url(ul)
+  attr(comrl, 'format') <- format
+  attr(comrl, 'method') <- method
+  class(comrl) <- c(class(comrl), 'comcat_url')
+  return(comrl)
+}
+
+#' @rdname make_comcat_url
 #' @return data.frame
-#' @export comcat_hypo
+#' @export
 #'
 # @examples
-make_comcat_url <- function(){
-	starttime = NA,
-           endtime = NA,
-           updatedafter = NA,
-           minlatitude = NA,
-           maxlatitude = NA,
-           minlongitude = NA,
-           maxlongitude = NA,
-           latitude = NA,
-           longitude = NA,
-           minradius = NA,
-           minradiuskm = NA,
-           maxradius = NA,
-           maxradiuskm = NA,
-           mindepth = NA,
-           maxdepth = NA,
-           minmagnitude = NA,
-           maxmagnitude = NA,
-           catalog = NA,
-           contributor = NA,
-           eventtype = "earthquake",
-           reviewstatus = NA,
-           minmmi = NA,
-           maxmmi = NA,
-           mincdi = NA,
-           maxcdi = NA,
-           minfelt = NA,
-           alertlevel = NA,
-           mingap = NA,
-           maxgap = NA,
-           minsig = NA,
-           maxsig = NA,
-           producttype = NA){
+comcat_hypo <- function(...){
 
-    # use orderby=time-asc
-    #<scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
-    basic <- "https://earthquake.usgs.gov/fdsnws/event/1/" # "http://comcat.cr.usgs.gov/fdsnws/event/1/"
-    # basic request for data, always order by time, and use csv format
-    basicdata <- paste(basic, "query?", "orderby=time-asc&format=csv", sep = "")
-    # basic request for count of data, always order by time
-    basiccount <- paste(basic, "count?", "orderby=time-asc", sep = "")
-
-    
-}
-comcat_hypo <- function(...,
-    
     U <- make_comcat_url(...)
 
     maxeventspersearch <- 20000 # the code also searches for this but I am leaving the default in case that fails
@@ -156,7 +248,7 @@ comcat_hypo <- function(...,
     Now_pos <- .to_posix(Now)
     tenminutesago <- Now_pos - 10*60
     tenminutesagostring <- strftime(tenminutesago, format = tfmt, tz = fmtz) # convert time to a strong for comcat
-    
+
     if (FALSE){
 		getmaxcount <- paste(basiccount,
 			"&format=geojson&minlatitude=39.74881&maxlatitude=39.75012&minlongitude=-105.22078&maxlongitude=-105.21906&minmagnitude=8&starttime=",
@@ -223,13 +315,13 @@ comcat_hypo <- function(...,
     counts <- rep(0, nwindows)
     countrequests <- basiccount
 
-    if (nchar(requestlimits) > 0) countrequests <- paste0(countrequests, requestlimits) 
+    if (nchar(requestlimits) > 0) countrequests <- paste0(countrequests, requestlimits)
     countrequests <- paste0(countrequests, "&starttime=", timepointstrings[1])
     countrequests <- paste0(countrequests, "&endtime=", timepointstrings[2])
     # URL request
     counts <- 29544 #scan(countrequests, quiet = TRUE)
     totalevents <- counts
-    
+
     i <- 1
 
     # now go into a loop where we split windows with counts > maxeventspersearch

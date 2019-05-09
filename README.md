@@ -2,6 +2,11 @@ Search the ANSS ComCat comprehensive earthquake catalog
 for basic hypocentral data using the csv format
 ( see https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php although that documentation is missing the type parameter at the end )
 
+<!-- badges: start -->
+[![Build status](https://travis-ci.org/abarbour/rcomcat.svg?branch=master)](https://travis-ci.org/abarbour/rcomcat)
+[![Test coverage](https://codecov.io/gh/abarbour/rcomcat/branch/master/graph/badge.svg)](https://codecov.io/gh/abarbour/rcomcat?branch=master)
+<!-- badges: end -->
+
 Usage:
 
 First install the package:

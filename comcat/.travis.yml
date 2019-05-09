@@ -1,0 +1,27 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: r
+sudo: required
+cache: packages
+dist: trusty
+warnings_are_errors: false
+
+jobs:
+  include:
+#  - r: devel
+  - r: release
+
+r_packages:
+ - httr
+ = purrr
+ - readr
+ - testthat
+ - covr
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
+after_success:
+  - Rscript -e 'covr::codecov()'
