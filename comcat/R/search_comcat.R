@@ -85,7 +85,8 @@
 #' @export comcat_hypo
 #'
 # @examples
-comcat_hypo <- function(starttime = NA,
+make_comcat_url <- function(){
+	starttime = NA,
            endtime = NA,
            updatedafter = NA,
            minlatitude = NA,
@@ -117,11 +118,26 @@ comcat_hypo <- function(starttime = NA,
            minsig = NA,
            maxsig = NA,
            producttype = NA){
+
+    # use orderby=time-asc
+    #<scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
+    basic <- "https://earthquake.usgs.gov/fdsnws/event/1/" # "http://comcat.cr.usgs.gov/fdsnws/event/1/"
+    # basic request for data, always order by time, and use csv format
+    basicdata <- paste(basic, "query?", "orderby=time-asc&format=csv", sep = "")
+    # basic request for count of data, always order by time
+    basiccount <- paste(basic, "count?", "orderby=time-asc", sep = "")
+
     
+}
+comcat_hypo <- function(...,
+    
+    U <- make_comcat_url(...)
+
     maxeventspersearch <- 20000 # the code also searches for this but I am leaving the default in case that fails
     defaultduration <- 30
 
     # use orderby=time-asc
+    #<scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
     basic <- "https://earthquake.usgs.gov/fdsnws/event/1/" # "http://comcat.cr.usgs.gov/fdsnws/event/1/"
     # basic request for data, always order by time, and use csv format
     basicdata <- paste(basic, "query?", "orderby=time-asc&format=csv", sep = "")
