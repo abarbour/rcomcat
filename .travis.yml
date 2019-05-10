@@ -18,8 +18,12 @@ r_packages:
  - httr
  - purrr
  - readr
+ - jsonlite
+ - XML2R
+ - rgdal
  - testthat
  - covr
+# - knitr
 
 notifications:
   email:
