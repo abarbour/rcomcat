@@ -286,30 +286,41 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
         data.frame(Seg=j, Start=t_seq[j], End=t_seq[j + 1])
         })
   }
+  
+  if (verbose) message("Checking count for full query...")
+
   segs_set <- is.null(n_segs)
-  # Find out how many will be returned from the base query
-  message("Checking eq count for full query...")
   if (segs_set){
     Counts <- NA
   } else {
+    # Find out how many will be returned from the base query
     Counts <- comcat_query(UC)
     if (verbose) message(Counts, " earthquakes associated with this query")
   }
 
+  # if there are too many, we adapt the search by time
+  #  --> Counts == NA if the user specifies n_seg
   if (is.na(Counts) | (Counts > result_limit)){
-    # if there are too many, we adapt the search by time
+    
+    fudge <- 2L
     if (!segs_set){
-      n_segs <- 2 + (Counts - (Counts %% result_limit))/result_limit
+      n_segs <- 1L + fudge + (Counts - (Counts %% result_limit))/result_limit
     } else {
       n_segs <- as.integer(n_segs)
       stopifnot(n_segs > 1)
     }
+
     message('re-formulating the search for ', n_segs, ' time windows')
+    # generate a list of times for each segment
     Times <- .limit_splitter(Counts, n=n_segs, params=Params)
+
+    # convert those to count queries
+# [ ] this needs to be done adaptively to ensure segment-counts are !> limit
     Q <- lapply(Times, function(x){
       .query_to_count(U, starttime=x$Start, endtime=x$End)
     })
   } else {
+    # other wise the base query is fine
     Q <- list(U)
   }
   return(Q)
