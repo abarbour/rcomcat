@@ -1,12 +1,13 @@
 Package: comcat
 Type: Package
-Title: Search the ANSS ComCat comprehensive earthquake catalog
+Title: Search the ANSS comprehensive earthquake catalog (ComCat)
 Version: 0.0.9999
-Author: Andy Michael (creator) and Andy Barbour
-Maintainer: Andrew J Barbour <andy.barbour@gmail.com>
-Imports: httr, purrr, readr
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Andy Barbour [aut, cre] (<https://orcid.org/0000-0002-6890-2452>), Andy Michael [cre] (<https://orcid.org/0000-0002-2403-5019>)
+Maintainer: Andy Barbour <andy.barbour@gmail.com>
+Imports: httr, purrr, readr, jsonlite, XML2R, rgdal
+Description: Search the Advanced National Seismic System's comprehensive earthquake catalog
+    (ComCat), with support for loading in the results. One can provide search filters for
+    space, time, and earthquake parameters
 License: This software is in the public domain because it contains materials
     that originally came from the United States Geological Survey, an
     agency of the United States Department of Interior. For more
@@ -14,6 +15,7 @@ License: This software is in the public domain because it contains materials
     https://www.usgs.gov/visual-id/credit_usgs.html#copyright
 Encoding: UTF-8
 LazyData: true
+VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Suggests: 
     testthat,

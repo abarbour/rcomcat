@@ -2,10 +2,29 @@
 % Please edit documentation in R/search_comcat.R
 \name{adaptive_comcat_query}
 \alias{adaptive_comcat_query}
-\title{adaptive_comcat_query}
+\title{Adaptively adjust ComCat query based on result limits}
 \usage{
-adaptive_comcat_query(...)
+adaptive_comcat_query(..., n_segs = NULL, verbose = TRUE)
+}
+\arguments{
+\item{...}{parameters passed to \code{\link{make_comcat_url}}}
+
+\item{n_segs}{integer; the number of segments to split if
+the result is over the 20k limit (enforced by ComCat webservices)}
+
+\item{verbose}{logical; should messages be printed?}
+}
+\value{
+data.frame
 }
 \description{
-adaptive_comcat_query
+Adaptively adjust ComCat query based on result limits
+}
+\examples{
+\dontrun{
+aq <- adaptive_comcat_query(starttime='2016-01-01', endtime='2017-01-01')
+}
+}
+\seealso{
+\code{\link{comcat_query}}
 }

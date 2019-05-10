@@ -11,22 +11,25 @@
 #' note that if this and \code{search_box} are specificied, the code will throw and error.
 #' @param mindepth,maxdepth depth search parameters
 #' @param minmagnitude,maxmagnitude magnitude search parameters
-#' @param catalog,contributor catalog and contributor specifications; omitting them gets the "preferred" solution
-#' @param reviewstatus review status defaults to all or can be automatic or reviewed only
+#' @param catalog,contributor	catalog and contributor specifications; omitting them gets the "preferred" solution
+#' @param reviewstatus 	review status defaults to all or can be automatic or reviewed only
 #' @param minmmi,maxmmi Minimum and Maximum values for Maximum Modified Mercalli Intensity reported by ShakeMap.
 #' @param mincdi,maxcdi Minimum and Maximum values for Maximum Community Determined Intensity reported by Did You Feel It? forms (DYFI).
 #' @param minfelt limit to events with this many DYFI responses
-#' @param limit integer; the maximum number of events to return -- presently it cannot exceed 20k
 #' @param eventtype the type of event; if \code{eventtype='earthquake'} non-earthquakes
 #' are removed from the search. \emph{Warning: there are numerous options (see
 #' \url{https://earthquake.usgs.gov/fdsnws/event/1/application.json}, and no arg-checking is done here.}
 #' @param alertlevel limit to events with a specific pager alert; checking done if not \code{\link{missing}}
 #' @param producttype limits to events with specific product types available; checking done if not \code{\link{missing}}
-#' @param ... arguments passed to \code{\link{make_comcat_url}}
+#' @param method	query or count etc...
+#' @param limit integer; the maximum number of events to return -- presently it cannot exceed 20k
+#' @param orderby	orering: time-asc, etc...
+#' @param format	csv, etc...
+#' @param ... additional arguments
 #'
 #' @return A url with all non-NULL parameters that are specificied; this modifies
-#' the \link[httr]{url} object with an additional attribute for format, making it
-#' an object with \code{'comcat_url'} inheritance.
+#' the \code{\link[httr]{url}} object with an additional attribute for format, making it
+#' an object with \code{\link{'comcat_url'}} inheritance.
 #'
 #' @export
 #'
@@ -55,30 +58,40 @@
 #' plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
 #' summary(eqs)
 #' }
+#'
+#' # Find out values for different parameters:
+#' app <- make_comcat_url(method="application.json")
+#' \dontrun{
+#' app_values <- comcat_query(app)
+#' str(app_values)
+#' }
+#'
 make_comcat_url <- function(starttime = NULL,
-           endtime = NULL,
-           updatedafter = NULL,
-           search_box = NULL,
-           search_circle = NULL,
-           mindepth = NULL,
-           maxdepth = NULL,
-           minmagnitude = NULL,
-           maxmagnitude = NULL,
-           catalog = NULL,
-           contributor = NULL,
-           reviewstatus = NULL,
-           minmmi = NULL,
-           maxmmi = NULL,
-           mincdi = NULL,
-           maxcdi = NULL,
-           minfelt = NULL,
-           method = NULL,
-           format = NULL,
-           orderby = NULL,
-           limit = NULL,
-           eventtype = 'earthquake',
-           alertlevel,
-           producttype){
+                            endtime = NULL,
+                            updatedafter = NULL,
+                            search_box = NULL,
+                            search_circle = NULL,
+                            mindepth = NULL,
+                            maxdepth = NULL,
+                            minmagnitude = NULL,
+                            maxmagnitude = NULL,
+                            catalog = NULL,
+                            contributor = NULL,
+                            reviewstatus = NULL,
+                            minmmi = NULL,
+                            maxmmi = NULL,
+                            mincdi = NULL,
+                            maxcdi = NULL,
+                            minfelt = NULL,
+                            eventtype = 'earthquake',
+                            alertlevel,
+                            producttype,
+                            method = NULL,
+                            limit = NULL,
+                            orderby = NULL,
+                            `format` = NULL,
+                            ...
+){
 
   if (!is.null(limit)){
     limit <- as.integer(limit)
@@ -133,47 +146,47 @@ make_comcat_url <- function(starttime = NULL,
   # change in the future
   #
   query <- list(# Formats
-                format=format,
-                # Time
-                endtime=endtime,
-                starttime=starttime,
-                updatedafter=updatedafter,
-                # Other
-                catalog = catalog,
-                contributor = contributor,
-                eventid = NULL,
-                includeallmagnitudes = NULL,
-                includeallorigins = NULL,
-                includearrivals = NULL,
-                includedeleted = NULL,
-                includesuperseded = NULL,
-                limit = limit,
-                maxdepth = maxdepth,
-                maxmagnitude = maxmagnitude,
-                mindepth = mindepth,
-                minmagnitude = minmagnitude,
-                offset = NULL,
-                orderby = orderby,
-                # Extensions
-                alertlevel = alertlevel,
-                callback = NULL,
-                eventtype=eventtype,
-                jsonerror=NULL,
-                kmlanimated=NULL,
-                kmlcolorby=NULL,
-                maxcdi = maxcdi,
-                maxgap = NULL,
-                maxmmi = maxmmi,
-                maxsig = NULL,
-                mincdi = mincdi,
-                minfelt = minfelt,
-                mingap = NULL,
-                minsig = NULL,
-                nodata = NULL, #default 204
-                producttype = producttype,
-                productcode = NULL,
-                reviewstatus = reviewstatus
-                )
+    `format`=`format`,
+    # Time
+    endtime=endtime,
+    starttime=starttime,
+    updatedafter=updatedafter,
+    # Other
+    catalog = catalog,
+    contributor = contributor,
+    eventid = NULL,
+    includeallmagnitudes = NULL,
+    includeallorigins = NULL,
+    includearrivals = NULL,
+    includedeleted = NULL,
+    includesuperseded = NULL,
+    limit = limit,
+    maxdepth = maxdepth,
+    maxmagnitude = maxmagnitude,
+    mindepth = mindepth,
+    minmagnitude = minmagnitude,
+    `offset` = NULL,
+    orderby = orderby,
+    # Extensions
+    alertlevel = alertlevel,
+    callback = NULL,
+    eventtype=eventtype,
+    jsonerror=NULL,
+    kmlanimated=NULL,
+    kmlcolorby=NULL,
+    maxcdi = maxcdi,
+    maxgap = NULL,
+    maxmmi = maxmmi,
+    maxsig = NULL,
+    mincdi = mincdi,
+    minfelt = minfelt,
+    mingap = NULL,
+    minsig = NULL,
+    nodata = NULL, #default 204
+    producttype = producttype,
+    productcode = NULL,
+    reviewstatus = reviewstatus
+  )
   # Tack on Location options
   if (search_in_circle){
     query <- c(query, search_circle)
@@ -212,6 +225,7 @@ make_comcat_url <- function(starttime = NULL,
 #' @param x object
 #' @param verbose logical; should the query by shown?
 #' @export
+#' @seealso \code{\link{adaptive_comcat_query}}
 comcat_query <- function(x, ...) UseMethod('comcat_query')
 
 #' @rdname make_comcat_url
@@ -227,13 +241,48 @@ comcat_query.comcat_url <- function(x, verbose=TRUE, ...){
   method <- attr(x, 'method')
 
   values <- if (method == 'count'){
-    scan(x)
+    # number of events in search
+    # e.g. 10281
+    scan(x, what=integer(), quiet = !verbose)
+  } else if (method == 'version'){
+    # system version
+    # e.g., 1.8.1
+    base::package_version(scan(x, what=character(), quiet = !verbose))
   } else if (method == 'query') {
+    # query result
+    # can be multiple types
     if (format == 'csv'){
       readr::read_csv(x)
+    } else if (format == 'geojson'){
+      jsonlite::fromJSON(x)
+    } else if (format == 'text'){
+      readr::read_delim(x, delim="|")
+    } else if (format == 'kml'){
+      rgdal::readOGR(x, verbose = verbose)
+    } else if (format %in% c('quakeml','xml')){
+      .NotYetImplemented()
+    } else {
+      stop('unclear how to handle [', format, ']')
     }
+  } else if (method == "application.json") {
+    # System options
+    # e.g.,
+    # List of 5
+    # $ catalogs      : chr [1:35] "=c" "ak" "at" "atlas" ...
+    # $ contributors  : chr [1:23] "admin" "ak" "at" "atlas" ...
+    # $ producttypes  : chr [1:49] "associate" "cap" "disassociate" "dyfi" ...
+    # $ eventtypes    : chr [1:39] "acoustic noise" "acoustic_noise" "anthropogenic_event" "building collapse" ...
+    # $ magnitudetypes: chr [1:32] "2" "4" "fa" "H" ...
+    jsonlite::fromJSON(x)
+  } else if (method %in% c("catalogs","contributors")) {
+    # contributors,catalogs: unstructured xml
+    x_x <- XML2R::XML2R(x)
+    x_x[,'XML_value']
+  } else if (method == "application.wadl") {
+    # Unclear how to handle application.wadl: quakeml?
+    XML2R::XML2R(x)
   } else {
-    .NotYetImplemented()
+    stop('unclear how to handle [', method, ']')
   }
 
   return(values)
@@ -256,6 +305,7 @@ comcat_query.default <- function(...){
 #'
 #' @return data.frame
 #' @export
+#' @seealso \code{\link{comcat_query}}
 #'
 #' @examples
 #' \dontrun{
@@ -267,7 +317,7 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
   Last_month <- Today - 30
 
   U <- make_comcat_url(...)
-  UC <- .query_to_count(U)
+  UC <- convert_to(U, to='count')
 
   ul <- httr::parse_url(U)
   Params <- ul[['query']]
@@ -275,18 +325,6 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
 
   result_limit <- 20e3
 
-  .limit_splitter <- function(counts, n=NULL, params=list()){
-      param_names <- names(params)
-      has_start <- 'starttime' %in% param_names
-      has_end <- 'endtime' %in% param_names
-      starttime <- .to_posix(ifelse(has_start, params[['starttime']], Today), to_char=FALSE)
-      endtime <- .to_posix(ifelse(has_end, params[['endtime']], Last_month), to_char=FALSE)
-      t_seq <- seq(starttime, endtime, length.out = n)
-      lapply(seq_len(n - 1), function(j){
-        data.frame(Seg=j, Start=t_seq[j], End=t_seq[j + 1])
-        })
-  }
-  
   if (verbose) message("Checking count for full query...")
 
   segs_set <- is.null(n_segs)
@@ -301,7 +339,7 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
   # if there are too many, we adapt the search by time
   #  --> Counts == NA if the user specifies n_seg
   if (is.na(Counts) | (Counts > result_limit)){
-    
+
     fudge <- 2L
     if (!segs_set){
       n_segs <- 1L + fudge + (Counts - (Counts %% result_limit))/result_limit
@@ -312,12 +350,12 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
 
     message('re-formulating the search for ', n_segs, ' time windows')
     # generate a list of times for each segment
-    Times <- .limit_splitter(Counts, n=n_segs, params=Params)
+    Times <- .limit_splitter(Counts, n=n_segs, params=Params, now=Todal, then=Last_month)
 
     # convert those to count queries
-# [ ] this needs to be done adaptively to ensure segment-counts are !> limit
+    # [ ] this needs to be done adaptively to ensure segment-counts are !> limit
     Q <- lapply(Times, function(x){
-      .query_to_count(U, starttime=x$Start, endtime=x$End)
+      convert_to(U, to='count', starttime=x$Start, endtime=x$End)
     })
   } else {
     # other wise the base query is fine

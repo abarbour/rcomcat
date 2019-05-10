@@ -63,6 +63,10 @@
 #'  start and end times)
 #'
 #' @name comcat
-#' @import httr purrr readr
+#' @import httr readr
+#' @importFrom purrr compact
+#' @importFrom jsonlite fromJSON
+#' @importFrom XML2R XML2R
+#' @importFrom rgdal readOGR
 #' @docType package
 NULL

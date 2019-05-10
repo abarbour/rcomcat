@@ -1,5 +1,7 @@
+require(testthat)
 context("test-url_creation")
 
+# Create
 u0 <- make_comcat_url()
 c0 <- make_comcat_url(method='count')
 
@@ -16,6 +18,15 @@ cd1b <- make_comcat_url(method='count', starttime='2019-05-01T00:00:00', endtime
 ud2 <- make_comcat_url(starttime='2019-05-01T00:00:00', endtime='2019-05-09T00:00:00', search_box = search_area_sq)
 cd2a <- make_comcat_url(method='count', starttime='2019-05-01T00:00:00', endtime='2019-05-09T00:00:00', search_box = search_area_sq)
 cd2b <- make_comcat_url(method='count', starttime='2019-05-01T00:00:00', endtime='2019-05-09T00:00:00', search_box = search_area_sq)
+
+# Convert
+u0_c <- convert_to(u0, verbose=FALSE)
+c0_c <- convert_to(c0, verbose=FALSE)
+u0_recovered <- convert_to(u0_c, verbose=FALSE)
+c0_recovered <- convert_to(c0_c, verbose=FALSE)
+
+
+# Test conditions:
 
 test_that("default works", {
   expect_is(u0, 'character')
@@ -64,4 +75,11 @@ test_that("specifying time and rectangular area works", {
   expect_is(cd2b, 'comcat_url')
 
   expect_equal(cd2a, cd2b)
+})
+
+test_that("url conversion works", {
+	expect_is(u0_c, 'comcat_url')
+	expect_is(c0_c, 'comcat_url')
+	expect_equal(u0, u0_recovered)
+	expect_equal(c0, c0_recovered)
 })

@@ -12,9 +12,9 @@ make_comcat_url(starttime = NULL, endtime = NULL,
   mindepth = NULL, maxdepth = NULL, minmagnitude = NULL,
   maxmagnitude = NULL, catalog = NULL, contributor = NULL,
   reviewstatus = NULL, minmmi = NULL, maxmmi = NULL, mincdi = NULL,
-  maxcdi = NULL, minfelt = NULL, method = NULL, format = NULL,
-  orderby = NULL, limit = NULL, eventtype = "earthquake", alertlevel,
-  producttype)
+  maxcdi = NULL, minfelt = NULL, eventtype = "earthquake",
+  alertlevel, producttype, method = NULL, limit = NULL,
+  orderby = NULL, format = NULL, ...)
 
 comcat_query(x, ...)
 
@@ -45,8 +45,6 @@ note that if this and \code{search_box} are specificied, the code will throw and
 
 \item{minfelt}{limit to events with this many DYFI responses}
 
-\item{limit}{integer; the maximum number of events to return -- presently it cannot exceed 20k}
-
 \item{eventtype}{the type of event; if \code{eventtype='earthquake'} non-earthquakes
 are removed from the search. \emph{Warning: there are numerous options (see
 \url{https://earthquake.usgs.gov/fdsnws/event/1/application.json}, and no arg-checking is done here.}}
@@ -55,16 +53,24 @@ are removed from the search. \emph{Warning: there are numerous options (see
 
 \item{producttype}{limits to events with specific product types available; checking done if not \code{\link{missing}}}
 
-\item{x}{object}
+\item{method}{query or count etc...}
 
-\item{...}{arguments passed to \code{\link{make_comcat_url}}}
+\item{limit}{integer; the maximum number of events to return -- presently it cannot exceed 20k}
+
+\item{orderby}{orering: time-asc, etc...}
+
+\item{format}{csv, etc...}
+
+\item{...}{additional arguments}
+
+\item{x}{object}
 
 \item{verbose}{logical; should the query by shown?}
 }
 \value{
 A url with all non-NULL parameters that are specificied; this modifies
-the \link[httr]{url} object with an additional attribute for format, making it
-an object with \code{'comcat_url'} inheritance.
+the \code{\link[httr]{url}} object with an additional attribute for format, making it
+an object with \code{\link{'comcat_url'}} inheritance.
 }
 \description{
 Searches the ComCat database for basic hypocentral data for earthquakes
@@ -89,6 +95,14 @@ all.equal(eqs, eqs_raw)
 plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
 summary(eqs)
 }
+
+# Find out values for different parameters:
+app <- make_comcat_url(method="application.json")
+\dontrun{
+app_values <- comcat_query(app)
+str(app_values)
+}
+
 }
 \references{
 \url{https://earthquake.usgs.gov/fdsnws/event/1/},
@@ -96,4 +110,6 @@ summary(eqs)
 }
 \seealso{
 \link[httr]{build_url} and \link{comcat_hypo}
+
+\code{\link{adaptive_comcat_query}}
 }
