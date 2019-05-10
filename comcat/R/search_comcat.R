@@ -247,69 +247,66 @@ comcat_query.default <- function(...){
   comcat_query(U)
 }
 
-#' @title adaptive_comcat_query
-# @return data.frame
+#' @title Adaptively adjust ComCat query based on result limits
+#'
+#' @param ... parameters passed to \code{\link{make_comcat_url}}
+#' @param n_segs integer; the number of segments to split if
+#' the result is over the 20k limit (enforced by ComCat webservices)
+#' @param verbose logical; should messages be printed?
+#'
+#' @return data.frame
 #' @export
-#
-# @examples
-# aq <- adaptive_comcat_query(endtime='2018-01-01', starttime='2016-01-01')
-adaptive_comcat_query <- function(...){
+#'
+#' @examples
+#' \dontrun{
+#' aq <- adaptive_comcat_query(starttime='2016-01-01', endtime='2017-01-01')
+#' }
+adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
 
   Today <- as.Date(Sys.time(), tz='UTC')
   Last_month <- Today - 30
 
   U <- make_comcat_url(...)
-  Att <- attributes(U)
+  UC <- .query_to_count(U)
 
   ul <- httr::parse_url(U)
   Params <- ul[['query']]
   param_names <- names(Params)
 
-  # Make the counts version of this
-  count_method <- "count"
-  ul[['path']] <-  gsub("query", count_method, ul[['path']])
-  Att[['method']] <- count_method
-  UC <- httr::build_url(ul)
-  attributes(UC) <- Att
+  result_limit <- 20e3
 
+  .limit_splitter <- function(counts, n=NULL, params=list()){
+      param_names <- names(params)
+      has_start <- 'starttime' %in% param_names
+      has_end <- 'endtime' %in% param_names
+      starttime <- .to_posix(ifelse(has_start, params[['starttime']], Today), to_char=FALSE)
+      endtime <- .to_posix(ifelse(has_end, params[['endtime']], Last_month), to_char=FALSE)
+      t_seq <- seq(starttime, endtime, length.out = n)
+      lapply(seq_len(n - 1), function(j){
+        data.frame(Seg=j, Start=t_seq[j], End=t_seq[j + 1])
+        })
+  }
   # Find out how many will be returned from the base query
-  Counts <- 251056 ## comcat_query(UC)
-  message(Counts, " earthquakes in this query\n(",U,")")
-  limit <- 20e3
-  if (Counts > limit){
+  message("Checking eq count for full query...")
+  Counts <- comcat_query(UC)
+  message(Counts, " earthquakes associated with this query")
+
+  if (Counts > result_limit){
     # if there are too many, we adapt the search by time
-    n_segs <- 1 + (Counts - (Counts %% limit))/limit
+    if (is.null(n_segs)){
+      n_segs <- 2 + (Counts - (Counts %% result_limit))/result_limit
+    } else {
+      n_segs <- as.integer(n)
+      stopifnot(n_segs > 1)
+    }
     message('re-formulating the search for ', n_segs, ' time windows')
-    has_start <- 'starttime' %in% param_names
-    has_end <- 'endtime' %in% param_names
-    starttime <- .to_posix(ifelse(has_start, Params[['starttime']], Today), to_char=FALSE)
-    endtime <- .to_posix(ifelse(has_end, Params[['endtime']], Last_month), to_char=FALSE)
-
-    t_seq <- seq(starttime, endtime, length.out = n_segs)
-    Df <- data.frame(Start=t_seq[-n_segs], End=t_seq[-1])
-    print(Df)
-    Dat <- NA
+    Times <- .limit_splitter(Counts, n=n_segs, params=Params)
+    Q <- lapply(Times, function(x){
+      .query_to_count(U, starttime=x$Start, endtime=x$End)
+    })
   } else {
-    Dat <- comcat_query(U)
+    Q <- list(U)
   }
-  return(Dat)
+  return(Q)
 }
 
-.to_posix <- function(x, verbose=FALSE, to_char=TRUE){
-  fm <- "%Y-%m-%dT%H:%M:%S"
-  timezone <- "UTC"
-  if (verbose) message(x)
-  xpos <- if (is.character(x) | inherits(x,'POSIXt')){
-    x <- strftime(x, format=fm, usetz=FALSE, tz = timezone)
-    xp <- as.POSIXlt(x, format=fm, tz=timezone)
-    if (any(is.na(xp))) stop('could not coerce to POSIXlt')
-    xp
-  } else if (inherits(x,'Date')){
-    x
-  }
-  if (to_char){
-    format(xpos, format=fm)
-  } else {
-    xpos
-  }
-}
