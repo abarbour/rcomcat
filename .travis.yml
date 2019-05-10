@@ -30,7 +30,7 @@ r_packages:
  - rgdal
  - testthat
  - covr
- - knitr
+# - knitr
 
 notifications:
   email:

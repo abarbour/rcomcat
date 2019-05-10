@@ -15,7 +15,6 @@ License: This software is in the public domain because it contains materials
     https://www.usgs.gov/visual-id/credit_usgs.html#copyright
 Encoding: UTF-8
 LazyData: true
-VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Suggests: 
     testthat,
