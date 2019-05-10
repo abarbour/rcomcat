@@ -97,47 +97,88 @@ convert_to.comcat_url <- function(u, to, starttime, endtime, verbose=TRUE, to_po
 	}
 }
 
-# Convert a query (search method) to count (search method)
-# [ ] convert into method
-.query_to_count <- function(u, starttime, endtime, verbose=TRUE){
+#' Create time segments from date pairs
+#'
+#' @details \code{\link{time_limit_splitter}} inspects the contents of \code{params}
+#' for start and end times (in the list with names \code{'starttime'} and \code{'endtime'}); if they exist they will
+#' superceded by non-missing \code{now} and \code{then} arguments.
+#'
+#' @param now a start date; anything coercible to POSIXlt; if missing, \code{\link{Sys.Date()}} is assumed
+#' @param then an end date; anything coercible to POSIXlt; if missing, \code{now - 30} (days) is assumed
+#' @param n integer; the number of total segments; if missing, this will be larger of either
+#' the number of days between \code{then} and \code{now}, or 3.
+#' @param paramlist list; parameters, like from a \code{\link{comcat_url}} object.
+#' @param return.list logical; should the result be a list? If \code{FALSE} the result is a \code{data.frame}
+#' @param verbose logical; should messages be given?
+#'
+#' @return a \code{\link{data.frame}} or \code{\link{list}} depending on the \code{return.list} argument
+#' @export
+#'
+#' @examples
+#' L <- time_limit_splitter(verbose=TRUE)
+#' Df <- time_limit_splitter(return.list = FALSE)
+#' Df
+#' all.equal(L, split(Df, Df$Segment))
+time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE, verbose=FALSE){
 
-  stopifnot(inherits(u, 'comcat_url'))
+  param_names <- names(paramlist)
+  has_start <- 'starttime' %in% param_names
+  has_end <- 'endtime' %in% param_names
 
-  # set aside attributes and parse u
-  att <- attributes(u)
-  current_method <- att[['method']]
+  has_now <- !missing(now)
+  has_then <- !missing(then)
 
-  ul <- httr::parse_url(u)
+  if (!has_now) now <- Sys.Date()
+  if (!has_then) then <- now - 30
 
-  count_method <- "count"
-  already.count <- current_method == count_method
-
-  if (!already.count){
-    # Make the counts version of this
-    ul[['path']] <-  gsub("query", count_method, ul[['path']])
-    att[['method']] <- count_method
+  endtime <- if (has_end & !has_then){
+    paramlist[['endtime']]
   } else {
-    if (verbose) message('url is already count-method.')
+    if (verbose) message('assuming earlier date: ', then)
+    then
   }
 
-  # replace starttime and endtime if specified
-  if (!missing(starttime)){
-    if (verbose) message('replacing starttime with ', starttime)
-    ul[['query']][['starttime']] <- starttime
-  }
-  if (!missing(endtime)){
-    if (verbose) message('replacing endtime with ', starttime)
-    ul[['query']][['endtime']] <- endtime
+  starttime <- if (has_start & !has_now){
+    paramlist[['starttime']]
+  } else {
+    if (verbose) message('assuming later date: ', now)
+    now
   }
 
-  # (re)build the url object
-  uc <- httr::build_url(ul)
-  attributes(uc) <- att
+  starttime <- .to_posix(starttime, to_char=FALSE)
+  endtime <- .to_posix(endtime, to_char=FALSE)
 
-  return(uc)
+  if (endtime < starttime){
+    tmp <- endtime
+    endtime <- starttime
+    starttime <- tmp
+  }
+
+  if (missing(n)){
+    n <- max(3, ceiling(as.numeric(difftime(endtime, starttime, units='days'))))
+    if (verbose) message("assuming ", n, " segments")
+  }
+
+  t_seq <- seq(from=starttime, to=endtime, length.out = n + 1)
+  i_seq <- seq_len(n)
+
+  # create a data.frame
+  Df <- data.frame(Segment=paste0("seg_", i_seq), Start=t_seq[-n], End=t_seq[-1])
+
+  # optionally return a list
+  if (return.list){
+    split(Df, Df$Segment)
+  } else {
+    Df
+  }
 }
 
+#' @rdname time_limit_splitter
 # (optionally) convert to POSIX and then format as needed for ComCat queries
+#' @export
+#' @param x object
+#' @param to_char logical; should the final output be a formatted string instead of a
+#'  \code{\link{POSIXlt}} object?
 .to_posix <- function(x, verbose=FALSE, to_char=TRUE){
   fm <- "%Y-%m-%dT%H:%M:%S"
   timezone <- "UTC"
@@ -150,7 +191,8 @@ convert_to.comcat_url <- function(u, to, starttime, endtime, verbose=TRUE, to_po
   } else if (inherits(x,'Date')){
     x
   } else {
-    .NotYetImplemented()
+    #print(x)
+    stop('Unable to handle class [', class(x), ']')
   }
 
   if (to_char){

@@ -148,8 +148,8 @@ make_comcat_url <- function(starttime = NULL,
   query <- list(# Formats
     `format`=`format`,
     # Time
-    endtime=endtime,
     starttime=starttime,
+    endtime=endtime,
     updatedafter=updatedafter,
     # Other
     catalog = catalog,
@@ -225,7 +225,7 @@ make_comcat_url <- function(starttime = NULL,
 #' @param x object
 #' @param verbose logical; should the query by shown?
 #' @export
-#' @seealso \code{\link{adaptive_comcat_query}}
+#' @seealso \code{\link{make_adaptive_comcat_url}}
 comcat_query <- function(x, ...) UseMethod('comcat_query')
 
 #' @rdname make_comcat_url
@@ -301,6 +301,9 @@ comcat_query.default <- function(...){
 #' @param ... parameters passed to \code{\link{make_comcat_url}}
 #' @param n_segs integer; the number of segments to split if
 #' the result is over the 20k limit (enforced by ComCat webservices)
+#' @param refine logical; if the time period is broken up, check for
+#' the need to create subwindows. Presently refinement is only once,
+#' so results are not (yet) guaranteed.
 #' @param verbose logical; should messages be printed?
 #'
 #' @return data.frame
@@ -309,15 +312,15 @@ comcat_query.default <- function(...){
 #'
 #' @examples
 #' \dontrun{
-#' aq <- adaptive_comcat_query(starttime='2016-01-01', endtime='2017-01-01')
+#' aq <- make_adaptive_comcat_url(starttime='2016-01-01', endtime='2016-04-01')
 #' }
-adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
+make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE){
 
   Today <- as.Date(Sys.time(), tz='UTC')
   Last_month <- Today - 30
 
   U <- make_comcat_url(...)
-  UC <- convert_to(U, to='count')
+  UC <- convert_to(U, to='count', verbose=FALSE)
 
   ul <- httr::parse_url(U)
   Params <- ul[['query']]
@@ -327,7 +330,8 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
 
   if (verbose) message("Checking count for full query...")
 
-  segs_set <- is.null(n_segs)
+  segs_set <- !is.null(n_segs)
+
   if (segs_set){
     Counts <- NA
   } else {
@@ -350,17 +354,47 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
 
     message('re-formulating the search for ', n_segs, ' time windows')
     # generate a list of times for each segment
-    Times <- .limit_splitter(Counts, n=n_segs, params=Params, now=Todal, then=Last_month)
+    Times <- time_limit_splitter(now=Today, then=Last_month, n=n_segs, paramlist=Params, return.list = TRUE, verbose=FALSE)
 
-    # convert those to count queries
-    # [ ] this needs to be done adaptively to ensure segment-counts are !> limit
-    Q <- lapply(Times, function(x){
-      convert_to(U, to='count', starttime=x$Start, endtime=x$End)
-    })
+    ..new_count_url <- function(seg, base_U = U){
+      # modify a query url to be counts in a certain timeperiod
+      convert_to(base_U, to='count', starttime=seg$Start, endtime=seg$End, verbose=FALSE)
+    }
+
+    .process_segment <- function(x){
+      # x is a data.frame if segment id, start, and end time
+      # .new_count_url returns url with starttime and endtime adjusted
+      new_uc <- ..new_count_url(seg = x)
+      if (refine){
+        rest_counts <- comcat_query(new_uc)
+        if (rest_counts > result_limit){
+          # refine window with double the number of subwindows
+          # note that we do not check to see if subwindows will be under the limit
+          seg_Times <- time_limit_splitter(now=x$End, then=x$Start, n = n_segs * 2, return.list = TRUE, verbose=FALSE)
+          lapply(seg_Times, ..new_count_url)
+        } else {
+          # the original window is fine
+          list(new_uc)
+        }
+      } else {
+        # assume the original window is fine
+        list(new_uc)
+      }
+    }
+    C <- lapply(Times, .process_segment)
   } else {
-    # other wise the base query is fine
-    Q <- list(U)
+    # otherwise the base query is fine
+    C <- list(U)
   }
+  Cu <- unlist(C, recursive = FALSE)
+  Q <- lapply(Cu, convert_to, to='query')
+  class(Q) <- c(class(Q), 'comcat_url_list')
   return(Q)
 }
 
+#' @rdname make_adaptive_comcat_url
+#' @method comcat_query comcat_url_list
+#' @export
+comcat_query.comcat_url_list <- function(x, ...){
+  lapply(x, comcat_query(U))
+}

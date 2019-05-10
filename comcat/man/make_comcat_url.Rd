@@ -111,5 +111,5 @@ str(app_values)
 \seealso{
 \link[httr]{build_url} and \link{comcat_hypo}
 
-\code{\link{adaptive_comcat_query}}
+\code{\link{make_adaptive_comcat_url}}
 }
