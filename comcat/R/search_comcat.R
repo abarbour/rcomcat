@@ -286,17 +286,22 @@ adaptive_comcat_query <- function(..., n_segs=NULL, verbose=TRUE){
         data.frame(Seg=j, Start=t_seq[j], End=t_seq[j + 1])
         })
   }
+  segs_set <- is.null(n_segs)
   # Find out how many will be returned from the base query
   message("Checking eq count for full query...")
-  Counts <- comcat_query(UC)
-  message(Counts, " earthquakes associated with this query")
+  if (segs_set){
+    Counts <- NA
+  } else {
+    Counts <- comcat_query(UC)
+    if (verbose) message(Counts, " earthquakes associated with this query")
+  }
 
-  if (Counts > result_limit){
+  if (is.na(Counts) | (Counts > result_limit)){
     # if there are too many, we adapt the search by time
-    if (is.null(n_segs)){
+    if (!segs_set){
       n_segs <- 2 + (Counts - (Counts %% result_limit))/result_limit
     } else {
-      n_segs <- as.integer(n)
+      n_segs <- as.integer(n_segs)
       stopifnot(n_segs > 1)
     }
     message('re-formulating the search for ', n_segs, ' time windows')
