@@ -160,17 +160,32 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
   }
 
   t_seq <- seq(from=starttime, to=endtime, length.out = n + 1)
-  i_seq <- seq_len(n)
+  
+  .seq_to_seg(t_seq, return.list = return.list)
+  
+}
+
+#' @export
+.seq_to_seg <- function(times, return.list=TRUE){
+  
+  N <- length(times)
+  n <- N - 1 # number of segments, not bounding points
+  i_seg <- seq_len(n)
 
   # create a data.frame
-  Df <- data.frame(Segment=paste0("seg_", i_seq), Start=t_seq[-n], End=t_seq[-1])
-
+  # A -> B -> C
+  # to
+  # A -> B
+  # B -> C
+  Df <- data.frame(Segment=paste0("seg_", i_seg), Start=times[-N], End=times[-1])
+  
   # optionally return a list
   if (return.list){
     split(Df, Df$Segment)
   } else {
     Df
   }
+  
 }
 
 #' @rdname time_limit_splitter

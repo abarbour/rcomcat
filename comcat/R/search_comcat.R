@@ -316,9 +316,6 @@ comcat_query.default <- function(...){
 #' }
 make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE){
 
-  Today <- as.Date(Sys.time(), tz='UTC')
-  Last_month <- Today - 30
-
   U <- make_comcat_url(...)
   UC <- convert_to(U, to='count', verbose=FALSE)
 
@@ -326,6 +323,7 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
   Params <- ul[['query']]
   param_names <- names(Params)
 
+  
   result_limit <- 20e3
 
   if (verbose) message("Checking count for full query...")
@@ -354,7 +352,7 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
 
     message('re-formulating the search for ', n_segs, ' time windows')
     # generate a list of times for each segment
-    Times <- time_limit_splitter(now=Today, then=Last_month, n=n_segs, paramlist=Params, return.list = TRUE, verbose=FALSE)
+    Times <- time_limit_splitter(n=n_segs, paramlist=Params, return.list = TRUE, verbose=FALSE)
 
     ..new_count_url <- function(seg, base_U = U){
       # modify a query url to be counts in a certain timeperiod
@@ -387,7 +385,7 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
     C <- list(U)
   }
   Cu <- unlist(C, recursive = FALSE)
-  Q <- lapply(Cu, convert_to, to='query')
+  Q <- lapply(Cu, convert_to, to='query', verbose=FALSE)
   class(Q) <- c(class(Q), 'comcat_url_list')
   return(Q)
 }
@@ -397,4 +395,19 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
 #' @export
 comcat_query.comcat_url_list <- function(x, ...){
   lapply(x, comcat_query(U))
+}
+
+#' @export
+times_to_comcat_url <- function(times, ...){
+	if (missing(times)){
+		Now <- Sys.Date()
+		Then <- Now - 7
+		times <- seq(Then, Now, by=1)
+	}
+	segtimes <- .seq_to_seg(times, return.list=TRUE)
+	Q <- lapply(segtimes, function(seg){
+		make_comcat_url(..., starttime=seg$Start, enddtime=seg$End)
+	})
+	class(Q) <- c(class(Q), 'comcat_url_list')
+	return(Q)
 }
