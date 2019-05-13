@@ -183,7 +183,17 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
   # B -> C
   start_times <- times[-N]
   end_times <- times[-1]
-  Df <- data.frame(Segment=paste0(prefix, seg_codes), Seg_i = i_seg, Start=start_times, End=end_times)
+
+  start_is_dt <- any(comcat::is.date_or_time(start_times))
+  end_is_dt <- any(comcat::is.date_or_time(end_times))
+
+  mid_times <- if (start_is_dt & end_is_dt){
+    comcat::midtime(start_times, end_times)
+  } else {
+    NA
+  }
+
+  Df <- data.frame(Segment=paste0(prefix, seg_codes), Seg_i = i_seg, Start=start_times, End=end_times, Mid=mid_times)
 
   # optionally return a list
   if (return.list){
@@ -193,6 +203,19 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
   }
 
 }
+
+#' @export
+midtime <- function(early, late){
+  mid <- early + difftime(late, early)/2
+  return(mid)
+}
+
+#' @export
+is.date_or_time <- Vectorize(function(x){
+  # inherits is not vectorized
+  test_results <- sapply(c('Date','POSIXt'), function(f., x.=x){inherits(x., f.)})
+  any(test_results)
+})
 
 #' @rdname time_limit_splitter
 # (optionally) convert to POSIX and then format as needed for ComCat queries
