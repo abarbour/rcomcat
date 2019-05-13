@@ -28,6 +28,8 @@ the number of days between \code{then} and \code{now}, or 3.}
 
 \item{to_char}{logical; should the final output be a formatted string instead of a
 \code{\link{POSIXlt}} object?}
+
+\item{prefix}{character; the prefix to use for labeling the segments}
 }
 \value{
 a \code{\link{data.frame}} or \code{\link{list}} depending on the \code{return.list} argument

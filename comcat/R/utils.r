@@ -109,6 +109,7 @@ convert_to.comcat_url <- function(u, to, starttime, endtime, verbose=TRUE, to_po
 #' the number of days between \code{then} and \code{now}, or 3.
 #' @param paramlist list; parameters, like from a \code{\link{comcat_url}} object.
 #' @param return.list logical; should the result be a list? If \code{FALSE} the result is a \code{data.frame}
+#' @param prefix character; the prefix to use for labeling the segments
 #' @param verbose logical; should messages be given?
 #'
 #' @return a \code{\link{data.frame}} or \code{\link{list}} depending on the \code{return.list} argument
@@ -160,32 +161,37 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
   }
 
   t_seq <- seq(from=starttime, to=endtime, length.out = n + 1)
-  
+
   .seq_to_seg(t_seq, return.list = return.list)
-  
+
 }
 
 #' @export
-.seq_to_seg <- function(times, return.list=TRUE){
-  
+.seq_to_seg <- function(times, return.list=TRUE, prefix="seg_"){
+
   N <- length(times)
   n <- N - 1 # number of segments, not bounding points
   i_seg <- seq_len(n)
+  seg_codes <- gsub(" ", "0", format(i_seg), fixed=TRUE)
+  prefix <- as.character(prefix)
+  stopifnot(length(prefix) == 1)
 
   # create a data.frame
   # A -> B -> C
   # to
   # A -> B
   # B -> C
-  Df <- data.frame(Segment=paste0("seg_", i_seg), Start=times[-N], End=times[-1])
-  
+  start_times <- times[-N]
+  end_times <- times[-1]
+  Df <- data.frame(Segment=paste0(prefix, seg_codes), Seg_i = i_seg, Start=start_times, End=end_times)
+
   # optionally return a list
   if (return.list){
     split(Df, Df$Segment)
   } else {
     Df
   }
-  
+
 }
 
 #' @rdname time_limit_splitter

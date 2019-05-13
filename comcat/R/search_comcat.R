@@ -252,11 +252,11 @@ comcat_query.comcat_url <- function(x, verbose=TRUE, ...){
     # query result
     # can be multiple types
     if (format == 'csv'){
-      readr::read_csv(x)
+      suppressMessages(readr::read_csv(x))
     } else if (format == 'geojson'){
       jsonlite::fromJSON(x)
     } else if (format == 'text'){
-      readr::read_delim(x, delim="|")
+      suppressMessages(readr::read_delim(x, delim="|"))
     } else if (format == 'kml'){
       rgdal::readOGR(x, verbose = verbose)
     } else if (format %in% c('quakeml','xml')){
@@ -323,7 +323,7 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
   Params <- ul[['query']]
   param_names <- names(Params)
 
-  
+
   result_limit <- 20e3
 
   if (verbose) message("Checking count for full query...")
@@ -394,19 +394,48 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
 #' @method comcat_query comcat_url_list
 #' @export
 comcat_query.comcat_url_list <- function(x, ...){
-  lapply(x, comcat_query(U))
+  .fun <- function(u, ...){
+    message("Trying: ", u)
+    cq <- try(comcat_query(u, ...))
+    success <- !inherits(cq, 'try-error')
+    if (success){
+      attr(cq, 'success') <- success
+      cq
+    } else {
+      # use purrr::compact on the resulting list
+      warning(u, ' failed\n', cq)
+      NULL
+    }
+  }
+  lapply(x, .fun, ...)
 }
 
+#' Convert a vector of times to comcat_url objects
+#'
+#' @details Uses \code{\link{.seq_to_seg}} to generate time-segments
+#'
+#' @param times vector of times; anything that \code{\link{.to_posix}} can handle
+#' @param ... additional parameters sent to \code{\link{make_comcat_url}}
+#'
+#' @return \code{'comcat_url_list'} object with \code{'comcat_url'} entries
+#'
 #' @export
 times_to_comcat_url <- function(times, ...){
 	if (missing(times)){
 		Now <- Sys.Date()
 		Then <- Now - 7
 		times <- seq(Then, Now, by=1)
+	} else {
+	  nt <- length(na.omit(times))
+	  if (nt == 0){
+	    stop("no times given")
+	  } else if (nt == 1){
+	    warning('only one time given!')
+	  }
 	}
 	segtimes <- .seq_to_seg(times, return.list=TRUE)
 	Q <- lapply(segtimes, function(seg){
-		make_comcat_url(..., starttime=seg$Start, enddtime=seg$End)
+		make_comcat_url(..., starttime=seg$Start, endtime=seg$End)
 	})
 	class(Q) <- c(class(Q), 'comcat_url_list')
 	return(Q)
