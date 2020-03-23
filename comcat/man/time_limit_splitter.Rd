@@ -5,8 +5,14 @@
 \alias{.to_posix}
 \title{Create time segments from date pairs}
 \usage{
-time_limit_splitter(now, then, n, paramlist = list(),
-  return.list = TRUE, verbose = FALSE)
+time_limit_splitter(
+  now,
+  then,
+  n,
+  paramlist = list(),
+  return.list = TRUE,
+  verbose = FALSE
+)
 
 .to_posix(x, verbose = FALSE, to_char = TRUE)
 }

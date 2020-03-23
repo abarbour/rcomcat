@@ -4,7 +4,6 @@ Title: Search the ANSS comprehensive earthquake catalog (ComCat)
 Version: 0.0.9999
 Author: Andy Barbour [aut, cre] (<https://orcid.org/0000-0002-6890-2452>), Andy Michael [cre] (<https://orcid.org/0000-0002-2403-5019>)
 Maintainer: Andy Barbour <andy.barbour@gmail.com>
-Imports: httr, purrr, readr, jsonlite, XML2R, rgdal
 Description: Search the Advanced National Seismic System's comprehensive earthquake catalog
     (ComCat), with support for loading in the results. One can provide search filters for
     space, time, and earthquake parameters
@@ -15,7 +14,4 @@ License: This software is in the public domain because it contains materials
     https://www.usgs.gov/visual-id/credit_usgs.html#copyright
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
-Suggests: 
-    testthat,
-    covr
+RoxygenNote: 7.1.0

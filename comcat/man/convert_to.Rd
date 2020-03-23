@@ -7,8 +7,7 @@
 \usage{
 convert_to(u, ...)
 
-\method{convert_to}{comcat_url}(u, to, starttime, endtime,
-  verbose = TRUE, to_pos = FALSE, ...)
+\method{convert_to}{comcat_url}(u, to, starttime, endtime, verbose = TRUE, to_pos = FALSE, ...)
 }
 \arguments{
 \item{u}{\code{\link{comcat_url}} object}

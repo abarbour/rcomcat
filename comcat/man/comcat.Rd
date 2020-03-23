@@ -3,7 +3,6 @@
 \docType{package}
 \name{comcat}
 \alias{comcat}
-\alias{comcat-package}
 \title{ANSS ComCat search}
 \description{
 [INITIAL DOCS -- WILL CHANGE...]

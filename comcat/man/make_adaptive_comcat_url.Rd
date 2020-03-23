@@ -5,8 +5,7 @@
 \alias{comcat_query.comcat_url_list}
 \title{Adaptively adjust ComCat query based on result limits}
 \usage{
-make_adaptive_comcat_url(..., n_segs = NULL, refine = TRUE,
-  verbose = TRUE)
+make_adaptive_comcat_url(..., n_segs = NULL, refine = TRUE, verbose = TRUE)
 
 \method{comcat_query}{comcat_url_list}(x, ...)
 }

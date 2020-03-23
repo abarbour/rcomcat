@@ -7,14 +7,33 @@
 \alias{comcat_query.default}
 \title{Search ComCat for basic earthquake data}
 \usage{
-make_comcat_url(starttime = NULL, endtime = NULL,
-  updatedafter = NULL, search_box = NULL, search_circle = NULL,
-  mindepth = NULL, maxdepth = NULL, minmagnitude = NULL,
-  maxmagnitude = NULL, catalog = NULL, contributor = NULL,
-  reviewstatus = NULL, minmmi = NULL, maxmmi = NULL, mincdi = NULL,
-  maxcdi = NULL, minfelt = NULL, eventtype = "earthquake",
-  alertlevel, producttype, method = NULL, limit = NULL,
-  orderby = NULL, format = NULL, ...)
+make_comcat_url(
+  starttime = NULL,
+  endtime = NULL,
+  updatedafter = NULL,
+  search_box = NULL,
+  search_circle = NULL,
+  mindepth = NULL,
+  maxdepth = NULL,
+  minmagnitude = NULL,
+  maxmagnitude = NULL,
+  catalog = NULL,
+  contributor = NULL,
+  reviewstatus = NULL,
+  minmmi = NULL,
+  maxmmi = NULL,
+  mincdi = NULL,
+  maxcdi = NULL,
+  minfelt = NULL,
+  eventtype = "earthquake",
+  alertlevel,
+  producttype,
+  method = NULL,
+  limit = NULL,
+  orderby = NULL,
+  format = NULL,
+  ...
+)
 
 comcat_query(x, ...)
 
