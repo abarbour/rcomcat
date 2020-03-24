@@ -19,6 +19,7 @@ make_comcat_url(
   maxmagnitude = NULL,
   catalog = NULL,
   contributor = NULL,
+  eventid = NULL,
   reviewstatus = NULL,
   minmmi = NULL,
   maxmmi = NULL,
@@ -95,6 +96,11 @@ an object with \code{\link{'comcat_url'}} inheritance.
 Searches the ComCat database for basic hypocentral data for earthquakes
  including origin time, location, magnitude, etc.
 }
+\details{
+\code{\link{make_comcat_url}} forms a valid url for the given input parameters
+
+\code{\link{comcat_query}} posts the url and loads in the results according to \code{'method'}
+}
 \examples{
 make_comcat_url()
 make_comcat_url(method='count')
@@ -113,13 +119,24 @@ all.equal(eqs, eqs_raw)
 # Plot the earthquakes on a map, scaling them by a proxy for seismic moment
 plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
 summary(eqs)
-}
 
 # Find out values for different parameters:
 app <- make_comcat_url(method="application.json")
-\dontrun{
 app_values <- comcat_query(app)
 str(app_values)
+
+# get information for a single event with a known identifier
+u_id <- make_comcat_url( eventid = 'ci14607652')
+eq_id <- comcat_query(u_id)
+
+# see if we can repeat this using the id-based results
+ot <- eq_id$`time`
+lat <- eq_id$latitude
+lon <- eq_id$longitude
+u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=list(latitude=lat, longitude=lon, maxradiuskm=10))
+eq_re_id <- comcat_query(u_re_id)
+
+all.equal(eq_id, eq_re_id)
 }
 
 }

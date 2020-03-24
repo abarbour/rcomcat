@@ -4,6 +4,12 @@
 #'  Searches the ComCat database for basic hypocentral data for earthquakes
 #'  including origin time, location, magnitude, etc.
 #'
+#' @details
+#'
+#' \code{\link{make_comcat_url}} forms a valid url for the given input parameters
+#'
+#' \code{\link{comcat_query}} posts the url and loads in the results according to \code{'method'}
+#'
 #' @param starttime,endtime,updatedafter time window parameters
 #' @param search_box list containing \code{minlatitude,maxlatitude,minlongitude,maxlongitude} for lat-lon box parameters;
 #' note that if this and \code{search_circle} are specificied, the code will throw and error.
@@ -57,13 +63,24 @@
 #' # Plot the earthquakes on a map, scaling them by a proxy for seismic moment
 #' plot(latitude ~ longitude, eqs, cex=0.2+scale(10**mag, center=FALSE))
 #' summary(eqs)
-#' }
 #'
 #' # Find out values for different parameters:
 #' app <- make_comcat_url(method="application.json")
-#' \dontrun{
 #' app_values <- comcat_query(app)
 #' str(app_values)
+#'
+#' # get information for a single event with a known identifier
+#' u_id <- make_comcat_url( eventid = 'ci14607652')
+#' eq_id <- comcat_query(u_id)
+#'
+#' # see if we can repeat this using the id-based results
+#' ot <- eq_id$`time`
+#' lat <- eq_id$latitude
+#' lon <- eq_id$longitude
+#' u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=list(latitude=lat, longitude=lon, maxradiuskm=10))
+#' eq_re_id <- comcat_query(u_re_id)
+#'
+#' all.equal(eq_id, eq_re_id)
 #' }
 #'
 make_comcat_url <- function(starttime = NULL,
@@ -77,6 +94,7 @@ make_comcat_url <- function(starttime = NULL,
                             maxmagnitude = NULL,
                             catalog = NULL,
                             contributor = NULL,
+                            eventid = NULL,
                             reviewstatus = NULL,
                             minmmi = NULL,
                             maxmmi = NULL,
@@ -131,6 +149,11 @@ make_comcat_url <- function(starttime = NULL,
   if (!is.null(endtime)) endtime <- .to_posix(endtime)
   if (!is.null(updatedafter)) updatedafter <- .to_posix(updatedafter)
 
+  if (!is.null(eventid)){
+    eventid <- as.character(eventid)
+    stopifnot(length(eventid) == 1)
+  }
+
   search_in_box <- !is.null(search_box)
   #list(minlatitude = NULL, maxlatitude = NULL, minlongitude = NULL, maxlongitude = NULL)
   search_in_circle <- !is.null(search_circle)
@@ -154,7 +177,7 @@ make_comcat_url <- function(starttime = NULL,
     # Other
     catalog = catalog,
     contributor = contributor,
-    eventid = NULL,
+    eventid =  eventid,
     includeallmagnitudes = NULL,
     includeallorigins = NULL,
     includearrivals = NULL,
