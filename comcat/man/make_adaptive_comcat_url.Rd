@@ -20,9 +20,11 @@ the need to create subwindows. Presently refinement is only once,
 so results are not (yet) guaranteed.}
 
 \item{verbose}{logical; should messages be printed?}
+
+\item{x}{object with class \code{'comcat_url_list'}, e.g. from \code{\link{make_adaptive_comcat_url}}}
 }
 \value{
-data.frame
+An object of class \code{'comcat_url_list'}
 }
 \description{
 Adaptively adjust ComCat query based on result limits

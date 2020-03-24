@@ -57,6 +57,8 @@ note that if this and \code{search_box} are specificied, the code will throw and
 
 \item{catalog, contributor}{catalog and contributor specifications; omitting them gets the "preferred" solution}
 
+\item{eventid}{the ANSS event ID; this can only be a single value}
+
 \item{reviewstatus}{review status defaults to all or can be automatic or reviewed only}
 
 \item{minmmi, maxmmi}{Minimum and Maximum values for Maximum Modified Mercalli Intensity reported by ShakeMap.}
@@ -89,8 +91,8 @@ are removed from the search. \emph{Warning: there are numerous options (see
 }
 \value{
 A url with all non-NULL parameters that are specificied; this modifies
-the \code{\link[httr]{url}} object with an additional attribute for format, making it
-an object with \code{\link{'comcat_url'}} inheritance.
+the \code{\link[httr]{build_url}} object with an additional attribute for format, making it
+an object with \code{'comcat_url'} inheritance.
 }
 \description{
 Searches the ComCat database for basic hypocentral data for earthquakes
@@ -104,8 +106,11 @@ Searches the ComCat database for basic hypocentral data for earthquakes
 \examples{
 make_comcat_url()
 make_comcat_url(method='count')
-make_comcat_url(method='count', starttime='2011-03-09', endtime='2011-03-11') # prior to Tohoku M9
-make_comcat_url(method='count', starttime='2011-03-11', endtime='2011-03-13') # including Tohoku M9
+st <- '2011-03-09'
+en <- '2011-03-11'
+en2 <- '2011-03-13'
+make_comcat_url(method='count', starttime=st, endtime=en) # prior to Tohoku M9
+make_comcat_url(method='count', starttime=en, endtime=en2) # including Tohoku M9
 make_comcat_url(method='count', starttime=Sys.time()-30*60)
 u <- make_comcat_url(search_circle = list(latitude=32,longitude=-120,maxradiuskm=400))
 
@@ -133,7 +138,8 @@ eq_id <- comcat_query(u_id)
 ot <- eq_id$`time`
 lat <- eq_id$latitude
 lon <- eq_id$longitude
-u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=list(latitude=lat, longitude=lon, maxradiuskm=10))
+zone <- list(latitude=lat, longitude=lon, maxradiuskm=10)
+u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=zone)
 eq_re_id <- comcat_query(u_re_id)
 
 all.equal(eq_id, eq_re_id)
@@ -145,7 +151,7 @@ all.equal(eq_id, eq_re_id)
  \url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}
 }
 \seealso{
-\link[httr]{build_url} and \link{comcat_hypo}
+\link[httr]{build_url}
 
 \code{\link{make_adaptive_comcat_url}}
 }

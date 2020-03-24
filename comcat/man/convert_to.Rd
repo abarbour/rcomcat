@@ -10,7 +10,7 @@ convert_to(u, ...)
 \method{convert_to}{comcat_url}(u, to, starttime, endtime, verbose = TRUE, to_pos = FALSE, ...)
 }
 \arguments{
-\item{u}{\code{\link{comcat_url}} object}
+\item{u}{\code{'comcat_url'} object e.g. from \code{\link{make_comcat_url}}}
 
 \item{...}{additional arguments}
 
@@ -30,9 +30,6 @@ value already found in \code{u}}
 
 \item{to_pos}{logical; if \code{starttime} and/or \code{endtime}
 are supplied, should they be converted to the necessary format?}
-}
-\value{
-\code{\link{comcat_url}} object
 }
 \description{
 Change the method in a comcat_url object

@@ -2,6 +2,9 @@
 % Please edit documentation in R/utils.r
 \name{time_limit_splitter}
 \alias{time_limit_splitter}
+\alias{.seq_to_seg}
+\alias{midtime}
+\alias{is.date_or_time}
 \alias{.to_posix}
 \title{Create time segments from date pairs}
 \usage{
@@ -14,28 +17,40 @@ time_limit_splitter(
   verbose = FALSE
 )
 
+.seq_to_seg(times, return.list = TRUE, prefix = "seg_")
+
+midtime(early, late)
+
+is.date_or_time(x)
+
 .to_posix(x, verbose = FALSE, to_char = TRUE)
 }
 \arguments{
-\item{now}{a start date; anything coercible to POSIXlt; if missing, \code{\link{Sys.Date()}} is assumed}
+\item{now}{a start date; anything coercible to POSIXlt; if missing, \code{\link{Sys.time}} is used}
 
 \item{then}{an end date; anything coercible to POSIXlt; if missing, \code{now - 30} (days) is assumed}
 
 \item{n}{integer; the number of total segments; if missing, this will be larger of either
 the number of days between \code{then} and \code{now}, or 3.}
 
-\item{paramlist}{list; parameters, like from a \code{\link{comcat_url}} object.}
+\item{paramlist}{list; parameters, like from a \code{'comcat_url'} object (e.g., from \code{\link{make_comcat_url}}).}
 
 \item{return.list}{logical; should the result be a list? If \code{FALSE} the result is a \code{data.frame}}
 
 \item{verbose}{logical; should messages be given?}
 
+\item{times}{the sequence of times to segment}
+
+\item{prefix}{the prefix to attach to segment identifiers}
+
+\item{early}{the earler time}
+
+\item{late}{the later time}
+
 \item{x}{object}
 
 \item{to_char}{logical; should the final output be a formatted string instead of a
 \code{\link{POSIXlt}} object?}
-
-\item{prefix}{character; the prefix to use for labeling the segments}
 }
 \value{
 a \code{\link{data.frame}} or \code{\link{list}} depending on the \code{return.list} argument

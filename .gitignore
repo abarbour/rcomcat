@@ -1,3 +1,6 @@
+comcat_*.tar.gz
+comcat.Rcheck
+
 # History files
 .Rhistory
 

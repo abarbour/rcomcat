@@ -1,6 +1,6 @@
 #' Change the method in a comcat_url object
 #'
-#' @param u \code{\link{comcat_url}} object
+#' @param u \code{'comcat_url'} object e.g. from \code{\link{make_comcat_url}}
 #' @param to query-method to convert to; currently only \code{'count'} and \code{'query'}
 #' are supported, and if this is left blank the function
 #' will choose \code{'count'} if the current query-method is neither of the supported options,
@@ -15,7 +15,6 @@
 #' are supplied, should they be converted to the necessary format?
 #' @param ... additional arguments
 #'
-#' @return \code{\link{comcat_url}} object
 #' @export
 #'
 #' @examples
@@ -103,11 +102,11 @@ convert_to.comcat_url <- function(u, to, starttime, endtime, verbose=TRUE, to_po
 #' for start and end times (in the list with names \code{'starttime'} and \code{'endtime'}); if they exist they will
 #' superceded by non-missing \code{now} and \code{then} arguments.
 #'
-#' @param now a start date; anything coercible to POSIXlt; if missing, \code{\link{Sys.Date()}} is assumed
+#' @param now a start date; anything coercible to POSIXlt; if missing, \code{\link{Sys.time}} is used
 #' @param then an end date; anything coercible to POSIXlt; if missing, \code{now - 30} (days) is assumed
 #' @param n integer; the number of total segments; if missing, this will be larger of either
 #' the number of days between \code{then} and \code{now}, or 3.
-#' @param paramlist list; parameters, like from a \code{\link{comcat_url}} object.
+#' @param paramlist list; parameters, like from a \code{'comcat_url'} object (e.g., from \code{\link{make_comcat_url}}).
 #' @param return.list logical; should the result be a list? If \code{FALSE} the result is a \code{data.frame}
 #' @param prefix character; the prefix to use for labeling the segments
 #' @param verbose logical; should messages be given?
@@ -129,7 +128,7 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
   has_now <- !missing(now)
   has_then <- !missing(then)
 
-  if (!has_now) now <- Sys.Date()
+  if (!has_now) now <- as.Date(as.POSIXlt(Sys.time(), tz = 'UTC'))
   if (!has_then) then <- now - 30
 
   endtime <- if (has_end & !has_then){
@@ -166,6 +165,9 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
 
 }
 
+#' @rdname time_limit_splitter
+#' @param times the sequence of times to segment
+#' @param prefix the prefix to attach to segment identifiers
 #' @export
 .seq_to_seg <- function(times, return.list=TRUE, prefix="seg_"){
 
@@ -193,7 +195,9 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
     NA
   }
 
-  Df <- data.frame(Segment=paste0(prefix, seg_codes), Seg_i = i_seg, Start=start_times, End=end_times, Mid=mid_times)
+  Df <- data.frame(Segment=paste0(prefix, seg_codes),
+                   Seg_i = i_seg,
+                   Start=start_times, End=end_times, Mid=mid_times)
 
   # optionally return a list
   if (return.list){
@@ -204,12 +208,16 @@ time_limit_splitter <- function(now, then, n, paramlist=list(), return.list=TRUE
 
 }
 
+#' @rdname time_limit_splitter
+#' @param early the earler time
+#' @param late the later time
 #' @export
 midtime <- function(early, late){
   mid <- early + difftime(late, early)/2
   return(mid)
 }
 
+#' @rdname time_limit_splitter
 #' @export
 is.date_or_time <- Vectorize(function(x){
   # inherits is not vectorized

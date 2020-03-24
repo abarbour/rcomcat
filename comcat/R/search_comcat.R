@@ -17,7 +17,8 @@
 #' note that if this and \code{search_box} are specificied, the code will throw and error.
 #' @param mindepth,maxdepth depth search parameters
 #' @param minmagnitude,maxmagnitude magnitude search parameters
-#' @param catalog,contributor	catalog and contributor specifications; omitting them gets the "preferred" solution
+#' @param catalog,contributor	  catalog and contributor specifications; omitting them gets the "preferred" solution
+#' @param eventid   the ANSS event ID; this can only be a single value
 #' @param reviewstatus 	review status defaults to all or can be automatic or reviewed only
 #' @param minmmi,maxmmi Minimum and Maximum values for Maximum Modified Mercalli Intensity reported by ShakeMap.
 #' @param mincdi,maxcdi Minimum and Maximum values for Maximum Community Determined Intensity reported by Did You Feel It? forms (DYFI).
@@ -34,12 +35,12 @@
 #' @param ... additional arguments
 #'
 #' @return A url with all non-NULL parameters that are specificied; this modifies
-#' the \code{\link[httr]{url}} object with an additional attribute for format, making it
-#' an object with \code{\link{'comcat_url'}} inheritance.
+#' the \code{\link[httr]{build_url}} object with an additional attribute for format, making it
+#' an object with \code{'comcat_url'} inheritance.
 #'
 #' @export
 #'
-#' @seealso \link[httr]{build_url} and \link{comcat_hypo}
+#' @seealso \link[httr]{build_url}
 #'
 #' @references \url{https://earthquake.usgs.gov/fdsnws/event/1/},
 #'  \url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}
@@ -47,8 +48,11 @@
 #' @examples
 #' make_comcat_url()
 #' make_comcat_url(method='count')
-#' make_comcat_url(method='count', starttime='2011-03-09', endtime='2011-03-11') # prior to Tohoku M9
-#' make_comcat_url(method='count', starttime='2011-03-11', endtime='2011-03-13') # including Tohoku M9
+#' st <- '2011-03-09'
+#' en <- '2011-03-11'
+#' en2 <- '2011-03-13'
+#' make_comcat_url(method='count', starttime=st, endtime=en) # prior to Tohoku M9
+#' make_comcat_url(method='count', starttime=en, endtime=en2) # including Tohoku M9
 #' make_comcat_url(method='count', starttime=Sys.time()-30*60)
 #' u <- make_comcat_url(search_circle = list(latitude=32,longitude=-120,maxradiuskm=400))
 #'
@@ -77,7 +81,8 @@
 #' ot <- eq_id$`time`
 #' lat <- eq_id$latitude
 #' lon <- eq_id$longitude
-#' u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=list(latitude=lat, longitude=lon, maxradiuskm=10))
+#' zone <- list(latitude=lat, longitude=lon, maxradiuskm=10)
+#' u_re_id <- make_comcat_url(starttime=ot-30, endtime=ot+30, search_circle=zone)
 #' eq_re_id <- comcat_query(u_re_id)
 #'
 #' all.equal(eq_id, eq_re_id)
@@ -329,7 +334,7 @@ comcat_query.default <- function(...){
 #' so results are not (yet) guaranteed.
 #' @param verbose logical; should messages be printed?
 #'
-#' @return data.frame
+#' @return An object of class \code{'comcat_url_list'}
 #' @export
 #' @seealso \code{\link{comcat_query}}
 #'
@@ -415,6 +420,7 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
 
 #' @rdname make_adaptive_comcat_url
 #' @method comcat_query comcat_url_list
+#' @param x object with class \code{'comcat_url_list'}, e.g. from \code{\link{make_adaptive_comcat_url}}
 #' @export
 comcat_query.comcat_url_list <- function(x, ...){
   .fun <- function(u, ...){

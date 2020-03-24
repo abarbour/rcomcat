@@ -6,7 +6,16 @@ Author: Andy Barbour [aut, cre] (<https://orcid.org/0000-0002-6890-2452>), Andy 
 Maintainer: Andy Barbour <andy.barbour@gmail.com>
 Description: Search the Advanced National Seismic System's comprehensive earthquake catalog
     (ComCat), with support for loading in the results. One can provide search filters for
-    space, time, and earthquake parameters
+    space, time, and earthquake parameters.
+Imports:
+    httr,
+    purrr,
+    jsonlite,
+    readr,
+    rgdal,
+    XML2R
+Suggests:
+    testthat
 License: This software is in the public domain because it contains materials
     that originally came from the United States Geological Survey, an
     agency of the United States Department of Interior. For more
