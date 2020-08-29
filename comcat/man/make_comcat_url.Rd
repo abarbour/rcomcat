@@ -151,7 +151,7 @@ all.equal(eq_id, eq_re_id)
  \url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}
 }
 \seealso{
-\link[httr]{build_url}
+\code{\link{build_url}}
 
 \code{\link{make_adaptive_comcat_url}}
 }

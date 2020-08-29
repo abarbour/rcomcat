@@ -40,7 +40,9 @@
 #'
 #' @export
 #'
-#' @seealso \link[httr]{build_url}
+#' @seealso \code{\link{build_url}}
+#'
+#' \code{\link{make_adaptive_comcat_url}}
 #'
 #' @references \url{https://earthquake.usgs.gov/fdsnws/event/1/},
 #'  \url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}
@@ -182,7 +184,7 @@ make_comcat_url <- function(starttime = NULL,
     # Other
     catalog = catalog,
     contributor = contributor,
-    eventid =  eventid,
+    eventid = eventid,
     includeallmagnitudes = NULL,
     includeallorigins = NULL,
     includearrivals = NULL,
@@ -253,7 +255,6 @@ make_comcat_url <- function(starttime = NULL,
 #' @param x object
 #' @param verbose logical; should the query by shown?
 #' @export
-#' @seealso \code{\link{make_adaptive_comcat_url}}
 comcat_query <- function(x, ...) UseMethod('comcat_query')
 
 #' @rdname make_comcat_url
@@ -351,7 +352,6 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
   Params <- ul[['query']]
   param_names <- names(Params)
 
-
   result_limit <- 20e3
 
   if (verbose) message("Checking count for full query...")
@@ -421,11 +421,12 @@ make_adaptive_comcat_url <- function(..., n_segs=NULL, refine=TRUE, verbose=TRUE
 #' @rdname make_adaptive_comcat_url
 #' @method comcat_query comcat_url_list
 #' @param x object with class \code{'comcat_url_list'}, e.g. from \code{\link{make_adaptive_comcat_url}}
+#' @param verbose logical; should additional messages and warnings be given
 #' @export
-comcat_query.comcat_url_list <- function(x, ...){
+comcat_query.comcat_url_list <- function(x, verbose=TRUE, ...){
   .fun <- function(u, ...){
-    message("Trying: ", u)
-    cq <- try(comcat_query(u, ...))
+    if (verbose) message("Trying: ", u)
+    cq <- try(comcat_query(u, verbose=verbose, ...))
     success <- !inherits(cq, 'try-error')
     if (success){
       attr(cq, 'success') <- success

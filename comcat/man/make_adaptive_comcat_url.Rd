@@ -7,7 +7,7 @@
 \usage{
 make_adaptive_comcat_url(..., n_segs = NULL, refine = TRUE, verbose = TRUE)
 
-\method{comcat_query}{comcat_url_list}(x, ...)
+\method{comcat_query}{comcat_url_list}(x, verbose = TRUE, ...)
 }
 \arguments{
 \item{...}{parameters passed to \code{\link{make_comcat_url}}}
@@ -19,7 +19,7 @@ the result is over the 20k limit (enforced by ComCat webservices)}
 the need to create subwindows. Presently refinement is only once,
 so results are not (yet) guaranteed.}
 
-\item{verbose}{logical; should messages be printed?}
+\item{verbose}{logical; should additional messages and warnings be given}
 
 \item{x}{object with class \code{'comcat_url_list'}, e.g. from \code{\link{make_adaptive_comcat_url}}}
 }
