@@ -7,13 +7,15 @@
 \usage{
 event_info(id, ...)
 
-\method{event_info}{default}(id, ...)
+\method{event_info}{default}(id, verbose = FALSE, ...)
 }
 \arguments{
 \item{id}{character; event identifier (i.e., \code{'eventid'} in \code{\link{make_comcat_url}}); this
 can be a vector of identifiers}
 
 \item{...}{additional arguments to \code{\link{make_comcat_url}}}
+
+\item{verbose}{logical; should messages be given?}
 }
 \value{
 a named list of information for each \code{'id'} should it exist; the information for each event is given as

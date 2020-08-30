@@ -5,6 +5,7 @@
 #'
 #' @param id character; event identifier (i.e., \code{'eventid'} in \code{\link{make_comcat_url}}); this
 #' can be a vector of identifiers
+#' @param verbose logical; should messages be given?
 #' @param ... additional arguments to \code{\link{make_comcat_url}}
 #'
 #' @return a named list of information for each \code{'id'} should it exist; the information for each event is given as
@@ -20,13 +21,13 @@
 event_info <- function(id, ...) UseMethod('event_info')
 #' @rdname event_info
 #' @export
-event_info.default <- function(id, ...){
+event_info.default <- function(id, verbose=FALSE, ...){
   id <- as.vector(as.character(id))
   .proc_id <- function(eqid, ...) comcat::make_comcat_url(eventid = eqid, ...)
   Q <- lapply(id, .proc_id, ...)
   class(Q) <- c(class(Q), 'comcat_url_list')
   message(sprintf("Gathering information for %s events...", length(id)))
-  QL <- comcat_query(Q, verbose = FALSE)
+  QL <- comcat_query(Q, verbose = verbose)
   names(QL) <- id
   QL
 }
