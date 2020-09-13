@@ -3,7 +3,7 @@
 language: r
 sudo: required
 cache: packages
-dist: trusty
+#dist: trusty
 warnings_are_errors: false
 
 before_install:
