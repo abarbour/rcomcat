@@ -1,7 +1,7 @@
 Package: comcat
 Type: Package
 Title: Search the ANSS comprehensive earthquake catalog (ComCat)
-Version: 0.0.9998
+Version: 0.0.9988
 Authors@R:
     c(person(given = c("Andrew","J."),
              family = "Barbour",
@@ -20,7 +20,6 @@ Imports:
     purrr,
     jsonlite,
     readr,
-    rgdal,
     XML2R
 Suggests:
     testthat
@@ -31,4 +30,4 @@ License: This software is in the public domain because it contains materials
     https://www.usgs.gov/visual-id/credit_usgs.html#copyright
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2

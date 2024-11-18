@@ -2,6 +2,7 @@
 % Please edit documentation in R/comcat-package.r
 \docType{package}
 \name{comcat}
+\alias{comcat-package}
 \alias{comcat}
 \title{ANSS ComCat search}
 \description{
@@ -64,4 +65,13 @@
  NOT NEED TO BE GIVEN UNLESS YOU WANT TO CHANGE THEM. NA means Not
  Available and the parameter will not be used (except for the defaults on
  start and end times)
+}
+\author{
+\strong{Maintainer}: Andrew J. Barbour \email{andy.barbour@gmail.com} (\href{https://orcid.org/0000-0002-6890-2452}{ORCID})
+
+Authors:
+\itemize{
+  \item Andy Michael (\href{https://orcid.org/0000-0002-2403-5019}{ORCID})
+}
+
 }

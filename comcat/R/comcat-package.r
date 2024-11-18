@@ -67,7 +67,7 @@
 #' @importFrom purrr compact
 #' @importFrom jsonlite fromJSON
 #' @importFrom XML2R XML2R
-#' @importFrom rgdal readOGR
+# @importFrom rgdal readOGR
 #' @importFrom stats na.omit
 #' @docType package
 NULL
